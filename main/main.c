@@ -6,22 +6,22 @@
    software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
    CONDITIONS OF ANY KIND, either express or implied.
 */
-// Standard C includes
-#include <stdio.h>
 
 // esp-idf includes
-#include <freertos/FreeRTOS.h>
-#include <freertos/task.h>
-#include <esp_system.h>
 #include <esp_spi_flash.h>
 
 // Application includes
 #include <components.h>
-#include <mqtt_connection.h>
+#include <config.h>
+#include <mqtt_client.h>
+#include <wifi.h>
 
 void app_main() {
 
-	mqttInit();
+	configInit();
+
+	wiFiInit();
+	mqttClientInit();
 
 	componentsInit();
 

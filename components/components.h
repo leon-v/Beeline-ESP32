@@ -7,18 +7,17 @@
 #include <freertos/event_groups.h>
 #include <esp_system.h>
 #include <esp_log.h>
+#include <string.h>
+#include <stdio.h>
 
-enum{
-	COMPONENT_READY
-}
+#define COMPONENT_READY	BIT0
 
-typedef struct{
+typedef struct {
 	const char * name;
-	const char * tag;
 	const unsigned int messagesIn : 1;
 	const unsigned int messagesOut : 1;
 	void (* task)(void *);
-	wifiEventGroup eventGroup;
+	EventGroupHandle_t eventGroup;
 } component_t;
 
 void componentsAdd(component_t * component);
@@ -26,5 +25,7 @@ void componentsAdd(component_t * component);
 void componentsInit(void);
 void componentsStart(void);
 
+int componentReadyWait(const char * name);
+void componentSetReady(component_t * component, int ready);
 
 #endif

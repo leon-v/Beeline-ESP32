@@ -15,5 +15,4 @@ cd toolchain
 tar xzf *.tar.gz
 cd ..
 
-make clean
-make -j10 all
+./idf.sh build
