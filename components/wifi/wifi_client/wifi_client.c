@@ -25,8 +25,8 @@ void wifiClientInit(void) {
 
     wifi_config_t wifi_config = {
 	    .sta = {
-	        .ssid = "V2.4Ghz",
-	        .password = "wifigrl7"
+	        .ssid = "",
+	        .password = ""
 	    },
 	};
 
