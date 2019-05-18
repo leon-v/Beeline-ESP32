@@ -1,4 +1,7 @@
-set(COMPONENT_SRCS "hello_world_main.c")
-set(COMPONENT_ADD_INCLUDEDIRS "")
+set(COMPONENT_ADD_INCLUDEDIRS .)
+
+file(GLOB component_files "*.c")
+
+set(COMPONENT_SRCS ${component_files})
 
 register_component()
