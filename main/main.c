@@ -9,19 +9,32 @@
 
 // esp-idf includes
 #include <esp_spi_flash.h>
+#include <nvs_flash.h>
 
 // Application includes
 #include <components.h>
 #include <config.h>
 #include <mqtt_client.h>
 #include <wifi.h>
+#include <http_server.h>
 
 void app_main() {
 
-	configInit();
+	esp_err_t error;
+
+	//Initialize NVS
+    error = nvs_flash_init();
+
+    if (error == ESP_ERR_NVS_NO_FREE_PAGES || error == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+		ESP_ERROR_CHECK(nvs_flash_erase());
+		error = nvs_flash_init();
+    }
+
+    ESP_ERROR_CHECK(error);
 
 	wiFiInit();
-	mqttClientInit();
+
+	httpServerInit();
 
 	componentsInit();
 

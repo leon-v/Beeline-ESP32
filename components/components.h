@@ -10,14 +10,19 @@
 #include <string.h>
 #include <stdio.h>
 
-#define COMPONENT_READY	BIT0
+#include "http_server.h"
+
+#define COMPONENT_READY		BIT0
+#define COMPONENT_NOT_READY	BIT1
 
 typedef struct {
 	const char * name;
 	const unsigned int messagesIn : 1;
 	const unsigned int messagesOut : 1;
 	void (* task)(void *);
+	void (* loadNVS)(nvs_handle nvsHandle)
 	EventGroupHandle_t eventGroup;
+	httpPage_t * configPage;
 } component_t;
 
 void componentsAdd(component_t * component);
@@ -25,7 +30,14 @@ void componentsAdd(component_t * component);
 void componentsInit(void);
 void componentsStart(void);
 
-int componentReadyWait(const char * name);
-void componentSetReady(component_t * component, int ready);
+component_t * componentsGet(const char * name);
+
+esp_err_t componentReadyWait(const char * name);
+esp_err_t componentNotReadyWait(const char * name);
+
+void componentSetReady(component_t * component);
+void componentSetNotReady(component_t * component);
+
+void componentsGetHTML(httpd_req_t *req, char * ssiTag);
 
 #endif

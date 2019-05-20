@@ -1,7 +1,7 @@
 // Application includes
-#include <components.h>
+#include "components.h"
 
-
+#define TAG "Components"
 
 unsigned char componentsLength = 0;
 component_t * components[10];
@@ -24,12 +24,14 @@ void componentsInit(void){
 
 		component->eventGroup = xEventGroupCreate();
 
-		componentSetReady(component, 0);
+		componentSetNotReady(component);
+
+		if (component->configPage != NULL){
+			httpServerAddPage(component->configPage);
+		}
 
 		ESP_LOGI(component->name, "Init");
 	}
-
-
 }
 
 void componentsStart(void){
@@ -37,43 +39,118 @@ void componentsStart(void){
 
 		component_t * component = components[i];
 
-		xTaskCreate(component->task, component->name, 2048, NULL, 10, NULL);
+		if (component->task != NULL){
+			xTaskCreate(component->task, component->name, 2048, NULL, 10, NULL);
+		}
+
 	}
 }
 
-int componentReadyWait(const char * name){
-
-	EventBits_t eventBits;
+component_t * componentsGet(const char * name) {
 
 	for (unsigned char i=0; i < componentsLength; i++) {
 
-		component_t * component = components[i];
+		component_t * pComponent = components[i];
 
-		if (strcmp(component->name, name) == 0) {
-
-			eventBits = xEventGroupWaitBits(component->eventGroup, COMPONENT_READY, false, true, 4000 / portTICK_RATE_MS);
-
-			if (!(eventBits & COMPONENT_READY)) {
-				ESP_LOGW(component->name, " not ready yet");
-				return 0;
-			}
-
-			return 1;
+		if (strcmp(pComponent->name, name) == 0) {
+			return pComponent;
 		}
 	}
 
-	return -1;
+	ESP_LOGE(TAG, "Unable to find %s in componentsGet", name);
+
+	return NULL;
 }
 
-void componentSetReady(component_t * component, int isReady) {
+esp_err_t componentReadyWait(const char * name){
 
-	if (isReady){
-		xEventGroupSetBits(component->eventGroup, COMPONENT_READY);
-		ESP_LOGW(component->name, " is ready.");
-	}
-	else{
-		xEventGroupClearBits(component->eventGroup, COMPONENT_READY);
-		ESP_LOGW(component->name, " not ready.");
+	component_t * component = componentsGet(name);
+
+	if (!component){
+		return ESP_FAIL;
 	}
 
+	EventBits_t eventBits = xEventGroupWaitBits(component->eventGroup, COMPONENT_READY, false, true, 4000 / portTICK_RATE_MS);
+
+	if (!(eventBits & COMPONENT_READY)) {
+		return ESP_FAIL;
+	}
+
+	ESP_LOGI(component->name, " ready");
+
+	return ESP_OK;
+}
+
+esp_err_t componentNotReadyWait(const char * name){
+
+	component_t * component = componentsGet(name);
+
+	if (!component){
+		return ESP_FAIL;
+	}
+
+	EventBits_t eventBits = xEventGroupWaitBits(component->eventGroup, COMPONENT_NOT_READY, false, true, 4000 / portTICK_RATE_MS);
+
+	if (!(eventBits & COMPONENT_NOT_READY)) {
+		return ESP_FAIL;
+	}
+
+	ESP_LOGW(component->name, " not ready");
+
+	return ESP_OK;
+}
+
+
+void componentSetReady(component_t * component) {
+
+	xEventGroupSetBits(component->eventGroup, COMPONENT_READY);
+	xEventGroupClearBits(component->eventGroup, COMPONENT_NOT_READY);
+	ESP_LOGW(component->name, " is ready.");
+}
+
+void componentSetNotReady(component_t * component) {
+
+	xEventGroupClearBits(component->eventGroup, COMPONENT_READY);
+	xEventGroupSetBits(component->eventGroup, COMPONENT_NOT_READY);
+	ESP_LOGW(component->name, " not ready.");
+}
+
+void componentsGetHTML(httpd_req_t *req, char * ssiTag){
+
+	if (strcmp(ssiTag, "configLinks") == 0){
+
+		for (unsigned char i=0; i < componentsLength; i++) {
+
+			component_t * pComponent = components[i];
+
+			if (pComponent->configPage == NULL){
+				continue;
+			}
+
+			ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, "<li>"));
+			ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, "<a "));
+				ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, "href=\""));
+				ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, pComponent->configPage->uri));
+				ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, "\" "));
+			ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, ">"));
+			ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, pComponent->name));
+			ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, "</li>"));
+		}
+
+
+	}
+}
+
+void componentsLoadNVS(component_t * component){
+
+	if (component->loadNVS == NULL){
+		return;
+	}
+
+	nvs_handle nvsHandle;
+	ESP_ERROR_CHECK(nvs_open(nvsName, NVS_READONLY, &nvsHandle));
+
+	component->loadNVS(nvsHandle);
+
+	nvs_close(nvsHandle);
 }

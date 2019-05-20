@@ -8,11 +8,9 @@ static component_t component = {
 
 static void task(void * arg) {
 
-	int isReady;
-
 	while (1) {
 
-		if (!componentReadyWait("WiFi")) {
+		if (componentReadyWait("WiFi") != ESP_OK) {
 			continue;
 		}
 

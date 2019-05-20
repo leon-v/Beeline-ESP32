@@ -10,13 +10,11 @@ static component_t component = {
 	.messagesOut = 0
 };
 
-static void task(void * arg) {
+static ssid;
+static password;
 
-	while (1) {
+void loadNVS(nvs_handle nvsHandle){
 
-		ESP_LOGW(component.name, "test");
-		vTaskDelay(1000 / portTICK_PERIOD_MS);
-	}
 }
 
 void wifiClientInit(void) {
@@ -38,15 +36,11 @@ void wifiClientInit(void) {
 
     ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));
 
-    ESP_ERROR_CHECK(esp_wifi_start() );
+    ESP_ERROR_CHECK(esp_wifi_start());
 
     esp_wifi_set_ps(WIFI_PS_MIN_MODEM);
 
 	ESP_LOGI(component.name, "WiFI Connecting to AP");
 
-	esp_wifi_connect();
-
-	component.task = task;
 	componentsAdd(&component);
-
 }

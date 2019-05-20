@@ -12,6 +12,10 @@ static void task(void * arg) {
 
 	while (1) {
 
+		if (componentReadyWait("WiFi") != ESP_OK) {
+			continue;
+		}
+
 		ESP_LOGW(component.name, "test");
 		vTaskDelay(1000 / portTICK_PERIOD_MS);
 	}

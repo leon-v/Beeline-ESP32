@@ -9,7 +9,7 @@ set(COMPONENT_EMBED_TXTFILES ${txt_files})
 file(GLOB bin_files "*.png")
 set(COMPONENT_EMBED_FILES ${bin_files})
 
-set(COMPONENT_REQUIRES)
+set(COMPONENT_REQUIRES http_server)
 set(COMPONENT_PRIV_REQUIRES)
 
 register_component()
