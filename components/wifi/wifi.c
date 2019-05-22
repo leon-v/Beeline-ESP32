@@ -65,7 +65,7 @@ static esp_err_t wifiEventHandler(void *ctx, system_event_t *event){
 }
 
 
-void wiFiInit(void){
+void wiFiInit(int apMode) {
 
 	tcpip_adapter_init();
 
@@ -73,7 +73,15 @@ void wiFiInit(void){
 
 	componentsAdd(&component);
 
-	wifiClientInit();
+	if (apMode){
+		wifiAccessPointInit();
+		ESP_LOGW(component.name, "Starting in AP mode");
+	}
+	else{
+		wifiClientInit();
+		ESP_LOGW(component.name, "Starting in STA mode");
+	}
+	
 
-	// wifiAccessPointInit();
+	
 }
