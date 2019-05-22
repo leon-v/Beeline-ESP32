@@ -14,6 +14,26 @@ void componentsAdd(component_t * component){
 	ESP_LOGI(component->name, "Add");
 }
 
+void componentsLoadNVS(component_t * component){
+
+	if (component->loadNVS == NULL){
+		return;
+	}
+
+	nvs_handle nvsHandle;
+	esp_err_t espError = nvs_open(component->name, NVS_READONLY, &nvsHandle);
+
+	ESP_ERROR_CHECK_WITHOUT_ABORT(espError);
+
+	if (espError != ESP_OK) {
+		return;
+	}
+
+	component->loadNVS(nvsHandle);
+
+	nvs_close(nvsHandle);
+}
+
 void componentsInit(void){
 
 	printf("componentsInit\n");
@@ -29,6 +49,8 @@ void componentsInit(void){
 		if (component->configPage != NULL){
 			httpServerAddPage(component->configPage);
 		}
+
+		componentsLoadNVS(&component);
 
 		ESP_LOGI(component->name, "Init");
 	}
@@ -141,16 +163,13 @@ void componentsGetHTML(httpd_req_t *req, char * ssiTag){
 	}
 }
 
-void componentsLoadNVS(component_t * component){
+void componentsLoadNVSString(nvs_handle nvsHandle, char * string, const char * key) {
 
-	if (component->loadNVS == NULL){
-		return;
-	}
+	size_t length = 512;
+	nvs_get_str(nvsHandle, key, NULL, length);
+	length++;
 
-	nvs_handle nvsHandle;
-	ESP_ERROR_CHECK(nvs_open(nvsName, NVS_READONLY, &nvsHandle));
+	string = (string == NULL) ? malloc(length) : realloc(string, length);
 
-	component->loadNVS(nvsHandle);
-
-	nvs_close(nvsHandle);
+	nvs_get_str(nvsHandle, key, string, length);
 }

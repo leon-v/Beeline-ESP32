@@ -6,6 +6,7 @@
 #include <freertos/task.h>
 #include <freertos/event_groups.h>
 #include <esp_system.h>
+#include <nvs_flash.h>
 #include <esp_log.h>
 #include <string.h>
 #include <stdio.h>
@@ -20,7 +21,7 @@ typedef struct {
 	const unsigned int messagesIn : 1;
 	const unsigned int messagesOut : 1;
 	void (* task)(void *);
-	void (* loadNVS)(nvs_handle nvsHandle)
+	void (* loadNVS)(nvs_handle nvsHandle);
 	EventGroupHandle_t eventGroup;
 	httpPage_t * configPage;
 } component_t;
@@ -40,4 +41,5 @@ void componentSetNotReady(component_t * component);
 
 void componentsGetHTML(httpd_req_t *req, char * ssiTag);
 
+void componentsLoadNVSString(nvs_handle nvsHandle, char * string, const char * key);
 #endif

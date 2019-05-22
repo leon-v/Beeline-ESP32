@@ -73,7 +73,7 @@ void wiFiInit(void){
 
 	componentsAdd(&component);
 
-	// wifiClientInit();
+	wifiClientInit();
 
-	wifiAccessPointInit();
+	// wifiAccessPointInit();
 }
