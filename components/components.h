@@ -22,6 +22,7 @@ typedef struct {
 	const unsigned int messagesOut : 1;
 	void (* task)(void *);
 	void (* loadNVS)(nvs_handle nvsHandle);
+	void (* saveNVS)(nvs_handle nvsHandle);
 	EventGroupHandle_t eventGroup;
 	httpPage_t * configPage;
 } component_t;
@@ -41,5 +42,10 @@ void componentSetNotReady(component_t * component);
 
 void componentsGetHTML(httpd_req_t *req, char * ssiTag);
 
-char * componentsLoadNVSString(nvs_handle nvsHandle, char * string, const char * key);
+char * componentsGetNVSString(nvs_handle nvsHandle, char * string, const char * key, const char * def);
+void componentsSetNVSString(nvs_handle nvsHandle, char * string, const char * key);
+
+uint32_t componentsGetNVSu32(nvs_handle nvsHandle, const char * key, const uint32_t def);
+void componentsSetNVSu32(nvs_handle nvsHandle, const char * key, uint32_t value);
+
 #endif

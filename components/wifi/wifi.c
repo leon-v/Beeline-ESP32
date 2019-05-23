@@ -7,7 +7,7 @@
 #include "wifi_access_point.h"
 
 static const char wifi_config_html_start[] asm("_binary_wifi_config_html_start");
-static const httpPage_t httpPageConfigHTML = {
+static const httpPage_t configPage = {
 	.uri	= "/wifi_config.html",
 	.page	= wifi_config_html_start,
 	.type	= HTTPD_TYPE_TEXT
@@ -17,7 +17,7 @@ static component_t component = {
 	.name = "WiFi",
 	.messagesIn = 0,
 	.messagesOut = 0,
-	.configPage = &httpPageConfigHTML
+	.configPage = &configPage
 };
 
 static esp_err_t wifiEventHandler(void *ctx, system_event_t *event){

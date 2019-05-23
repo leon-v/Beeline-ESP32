@@ -7,22 +7,26 @@ static const httpPage_t httpPageConfigHTML = {
 	.type	= HTTPD_TYPE_TEXT
 };
 
+static char * uniqueName;
+
+static void saveNVS(nvs_handle nvsHandle){
+	componentsSetNVSString(nvsHandle, uniqueName, "uniqueName");
+}
+
+static void loadNVS(nvs_handle nvsHandle){
+	uniqueName = componentsGetNVSString(nvsHandle, uniqueName, "uniqueName", "device");
+}
+
 static component_t component = {
 	.name = "Device",
 	.messagesIn = 0,
 	.messagesOut = 0,
-	.configPage = &httpPageConfigHTML
+	.configPage = &httpPageConfigHTML,
+	.loadNVS = &loadNVS,
+	.saveNVS = &saveNVS
 };
 
-static char * uniqueName;
-
-static void loadNVS(nvs_handle nvsHandle){
-	uniqueName = componentsLoadNVSString(nvsHandle, uniqueName, "uniqueName");
-}
-
 void deviceInit(void) {
-	component.loadNVS = &loadNVS;
-	componentsAdd(&component);
 
 	// Set device unique ID
     nvs_handle nvsHandle;
@@ -50,4 +54,6 @@ void deviceInit(void) {
 		ESP_ERROR_CHECK(nvs_commit(nvsHandle));
 		nvs_close(nvsHandle);
 	}
+
+	componentsAdd(&component);
 }

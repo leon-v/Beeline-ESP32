@@ -4,12 +4,6 @@
 
 #include "components.h"
 
-static component_t component = {
-	.name = "WiFi Client",
-	.messagesIn = 0,
-	.messagesOut = 0
-};
-
 static char * ssid;
 static char * password;
 
@@ -31,17 +25,29 @@ void wifiClientSetConfig(void) {
 
 	ESP_ERROR_CHECK(esp_wifi_start());
 
-	ESP_LOGI(component.name, "loaded configuration and restarting.");
+	// ESP_LOGI(component.name, "loaded configuration and restarting.");
+}
+
+static void saveNVS(nvs_handle nvsHandle) {
+	componentsSetNVSString(nvsHandle, ssid, "ssid");
+	componentsSetNVSString(nvsHandle, password, "password");
 }
 
 static void loadNVS(nvs_handle nvsHandle){
-	ssid = componentsLoadNVSString(nvsHandle, ssid, "ssid");
-	password = componentsLoadNVSString(nvsHandle, password, "password");
+	ssid = componentsGetNVSString(nvsHandle, ssid, "ssid", "SSID");
+	password = componentsGetNVSString(nvsHandle, password, "password", "Password");
 
 	wifiClientSetConfig();
 }
 
 
+static component_t component = {
+	.name = "WiFi Client",
+	.messagesIn = 0,
+	.messagesOut = 0,
+	.loadNVS = &loadNVS,
+	.saveNVS = &saveNVS,
+};
 
 void wifiClientInit(void) {
 
@@ -57,7 +63,6 @@ void wifiClientInit(void) {
 
     ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_MIN_MODEM));
 
-    component.loadNVS = &loadNVS;
 	ESP_LOGI(component.name, "WiFI Connecting to AP");
 
 	componentsAdd(&component);

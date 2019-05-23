@@ -58,6 +58,8 @@ void app_main() {
 
 	deviceInit();
 
+	mqttClientInit();
+
 	/*
     * Call Init on components
     */

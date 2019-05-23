@@ -1,0 +1,85 @@
+<!--#page:template_top_html-->
+<h2>MQTT Configuration</h2>
+	<form action="" method="post">
+
+	<h3>Host Name</h3>
+	<div class="inputBlock">
+		<div class="input">
+			<input type="text" name="nvs:MQTT Client:string:host" value="<!--#nvs:MQTT Client:string:host-->" >
+		</div>
+		<p class="info">E.g mqtt.example.com</p>
+	</div>
+
+
+	<h3>Port</h3>
+	<div class="inputBlock">
+		<div class="input">
+			<input type="text" name="nvs:MQTT Client:int:port" value="<!--#nvs:MQTT Client:int:port-->" >
+		</div>
+		<p class="info">E.g 1883</p>
+	</div>
+
+
+	<h3>Keepalive</h3>
+	<div class="inputBlock">
+		<div class="input">
+			<div class="m">
+				<input type="text" name="nvs:MQTT Client:int:keepalive" value="<!--#nvs:MQTT Client:int:keepalive-->" >
+			</div>
+			<div class="r">Seconds</div>
+		</div>
+		<p class="info">E.g 30</p>
+	</div>
+
+
+	<h3>Broker Authentication User Name</h3>
+	<div class="inputBlock">
+		<div class="input">
+			<input type="text" name="nvs:MQTT Client:string:username" value="<!--#nvs:MQTT Client:string:username-->" >
+		</div>
+	</div>
+
+
+	<h3>Broker Authentication Password</h3>
+	<div class="inputBlock">
+		<div class="input">
+			<input type="password" name="nvs:MQTT Client:string:password" value="<!--#nvs:MQTT Client:string:password-->" >
+		</div>
+	</div>
+
+	<h3>Incoming Message Routing</h3>
+	<div class="inputBlock">
+		<!--#component:routeOptions:mqtt-->
+	</div>
+
+	<h3>Incoming Message Topic</h3>
+	<div class="inputBlock">
+		<div class="input">
+			<input type="text" name="nvs:MQTT Client:string:inTopic" value="<!--#nvs:MQTT Client:string:inTopic-->" >
+		</div>
+		<p class="info">
+			Topic this device will subscribe to, and forward messages from.<br>
+			NOTE: Router devices usually listen to the same topic sensor nodes send.<br>
+			E.g.<br>
+			Router: /beeline/in/#<br>
+			Sensor: /beeline/out/#<br>
+		</p>
+	</div>
+
+	<h3>Outgoing Message Topic</h3>
+	<div class="inputBlock">
+		<div class="input">
+			<input type="text" name="nvs:MQTT Client:string:outTopic" value="<!--#nvs:MQTT Client:string:outTopic-->" >
+		</div>
+		<p class="info">
+			Topic this device will forward messages to.<br>
+			NOTE: Router devices usually send to the same topic sensor nodes subscribe and listen.<br>
+			E.g.<br>
+			Router: /beeline/out<br>
+			Sensor: /beeline/in<br>
+		</p>
+	</div>
+
+	<button>Save Settings</button>
+</form>
+<!--#page:template_bottom_html-->

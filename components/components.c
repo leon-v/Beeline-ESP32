@@ -21,12 +21,27 @@ void componentsLoadNVS(component_t * pComponent){
 	}
 
 	nvs_handle nvsHandle;
-	esp_err_t espError = nvs_open(pComponent->name, NVS_READONLY, &nvsHandle);
+	esp_err_t espError;
 
-	ESP_ERROR_CHECK_WITHOUT_ABORT(espError);
+	espError = nvs_open(pComponent->name, NVS_READONLY, &nvsHandle);
 
-	if (espError != ESP_OK) {
+	if ( (espError == ESP_ERR_NVS_NOT_FOUND) && (pComponent->saveNVS) ) {
+
+		ESP_ERROR_CHECK(nvs_open(pComponent->name, NVS_READWRITE, &nvsHandle));
+
+		pComponent->loadNVS(nvsHandle);
+		pComponent->saveNVS(nvsHandle);
+
+		ESP_ERROR_CHECK(nvs_commit(nvsHandle));
+
+		ESP_LOGW(pComponent->name, "NVS default saved");
+	}
+	else if (espError != ESP_OK) {
+
 		ESP_LOGE(pComponent->name, "Abort NVS lading");
+
+		ESP_ERROR_CHECK_WITHOUT_ABORT(espError);
+
 		return;
 	}
 
@@ -164,25 +179,63 @@ void componentsGetHTML(httpd_req_t *req, char * ssiTag){
 	}
 }
 
-char * componentsLoadNVSString(nvs_handle nvsHandle, char * string, const char * key) {
+char * componentsGetNVSString(nvs_handle nvsHandle, char * string, const char * key, const char * def) {
 
 	size_t length = 512;
 
 	esp_err_t espError = nvs_get_str(nvsHandle, key, NULL, &length);
 
-	ESP_ERROR_CHECK_WITHOUT_ABORT(espError);
+	if (espError == ESP_ERR_NVS_NOT_FOUND) {
 
-	if (espError != ESP_OK){
+		length = strlen(def) + 1;
+
+		string = (string == NULL) ? malloc(length) : realloc(string, length);
+
+		strcpy(string, def);
+
+		return string;
+	}
+
+	else if (espError != ESP_OK){
+		ESP_ERROR_CHECK_WITHOUT_ABORT(espError);
 		return;
 	}
 
-	length++;
-
 	string = (string == NULL) ? malloc(length) : realloc(string, length);
 
-	nvs_get_str(nvsHandle, key, string, &length);
-
-	string[length] = "\0";
+	ESP_ERROR_CHECK(nvs_get_str(nvsHandle, key, string, &length));
 
 	return string;
+}
+
+void componentsSetNVSString(nvs_handle nvsHandle, char * string, const char * key) {
+
+	if (!string){
+		return;
+	}
+
+	ESP_ERROR_CHECK(nvs_set_str(nvsHandle, key, string));
+}
+
+// esp_err_t nvs_get_u32 (nvs_handle handle, const char* key, uint32_t* out_value);
+uint32_t componentsGetNVSu32(nvs_handle nvsHandle, const char * key, const uint32_t def) {
+	uint32_t value;
+
+	esp_err_t espError = nvs_get_u32(nvsHandle, key, &value);
+
+	if (espError == ESP_ERR_NVS_NOT_FOUND) {
+		return def;
+	}
+
+	else if (espError != ESP_OK){
+		ESP_ERROR_CHECK_WITHOUT_ABORT(espError);
+		return;
+	}
+
+	return value;
+}
+
+// esp_err_t nvs_set_u32 (nvs_handle handle, const char* key, uint32_t value);
+void componentsSetNVSu32(nvs_handle nvsHandle, const char * key, uint32_t value) {
+	ESP_ERROR_CHECK(nvs_set_u32 (nvsHandle, key, value));
 }
