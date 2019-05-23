@@ -30,11 +30,15 @@ void wifiClientSetConfig(void) {
 	ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifiConfig));
 
 	ESP_ERROR_CHECK(esp_wifi_start());
+
+	ESP_LOGI(component.name, "loaded configuration and restarting.");
 }
 
-void loadNVS(nvs_handle nvsHandle){
-	componentsLoadNVSString(nvsHandle, ssid, "ssid");
-	componentsLoadNVSString(nvsHandle, password, "password");
+static void loadNVS(nvs_handle nvsHandle){
+	ssid = componentsLoadNVSString(nvsHandle, ssid, "ssid");
+	password = componentsLoadNVSString(nvsHandle, password, "password");
+
+	wifiClientSetConfig();
 }
 
 

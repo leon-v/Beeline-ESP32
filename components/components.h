@@ -41,5 +41,5 @@ void componentSetNotReady(component_t * component);
 
 void componentsGetHTML(httpd_req_t *req, char * ssiTag);
 
-void componentsLoadNVSString(nvs_handle nvsHandle, char * string, const char * key);
+char * componentsLoadNVSString(nvs_handle nvsHandle, char * string, const char * key);
 #endif

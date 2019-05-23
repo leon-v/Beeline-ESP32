@@ -7,7 +7,7 @@
 #include "wifi_access_point.h"
 
 static const char wifi_config_html_start[] asm("_binary_wifi_config_html_start");
-const httpPage_t httpPageConfigHTML = {
+static const httpPage_t httpPageConfigHTML = {
 	.uri	= "/wifi_config.html",
 	.page	= wifi_config_html_start,
 	.type	= HTTPD_TYPE_TEXT

@@ -6,30 +6,31 @@
 unsigned char componentsLength = 0;
 component_t * components[10];
 
-void componentsAdd(component_t * component){
+void componentsAdd(component_t * pComponent){
 
-	components[componentsLength] = component;
+	components[componentsLength] = pComponent;
 	componentsLength++;
 
-	ESP_LOGI(component->name, "Add");
+	ESP_LOGI(pComponent->name, "Add");
 }
 
-void componentsLoadNVS(component_t * component){
+void componentsLoadNVS(component_t * pComponent){
 
-	if (component->loadNVS == NULL){
+	if (pComponent->loadNVS == NULL){
 		return;
 	}
 
 	nvs_handle nvsHandle;
-	esp_err_t espError = nvs_open(component->name, NVS_READONLY, &nvsHandle);
+	esp_err_t espError = nvs_open(pComponent->name, NVS_READONLY, &nvsHandle);
 
 	ESP_ERROR_CHECK_WITHOUT_ABORT(espError);
 
 	if (espError != ESP_OK) {
+		ESP_LOGE(pComponent->name, "Abort NVS lading");
 		return;
 	}
 
-	component->loadNVS(nvsHandle);
+	pComponent->loadNVS(nvsHandle);
 
 	nvs_close(nvsHandle);
 }
@@ -40,29 +41,29 @@ void componentsInit(void){
 
 	for (unsigned char i=0; i < componentsLength; i++) {
 
-		component_t * component = components[i];
+		component_t * pComponent = components[i];
 
-		component->eventGroup = xEventGroupCreate();
+		pComponent->eventGroup = xEventGroupCreate();
 
-		componentSetNotReady(component);
+		componentSetNotReady(pComponent);
 
-		if (component->configPage != NULL){
-			httpServerAddPage(component->configPage);
+		if (pComponent->configPage != NULL){
+			httpServerAddPage(pComponent->configPage);
 		}
 
-		componentsLoadNVS(&component);
+		componentsLoadNVS(pComponent);
 
-		ESP_LOGI(component->name, "Init");
+		ESP_LOGI(pComponent->name, "Init");
 	}
 }
 
 void componentsStart(void){
 	for (unsigned char i=0; i < componentsLength; i++) {
 
-		component_t * component = components[i];
+		component_t * pComponent = components[i];
 
-		if (component->task != NULL){
-			xTaskCreate(component->task, component->name, 2048, NULL, 10, NULL);
+		if (pComponent->task != NULL){
+			xTaskCreate(pComponent->task, pComponent->name, 2048, NULL, 10, NULL);
 		}
 
 	}
@@ -86,55 +87,55 @@ component_t * componentsGet(const char * name) {
 
 esp_err_t componentReadyWait(const char * name){
 
-	component_t * component = componentsGet(name);
+	component_t * pComponent = componentsGet(name);
 
-	if (!component){
+	if (!pComponent){
 		return ESP_FAIL;
 	}
 
-	EventBits_t eventBits = xEventGroupWaitBits(component->eventGroup, COMPONENT_READY, false, true, 4000 / portTICK_RATE_MS);
+	EventBits_t eventBits = xEventGroupWaitBits(pComponent->eventGroup, COMPONENT_READY, false, true, 4000 / portTICK_RATE_MS);
 
 	if (!(eventBits & COMPONENT_READY)) {
 		return ESP_FAIL;
 	}
 
-	ESP_LOGI(component->name, " ready");
+	ESP_LOGI(pComponent->name, " ready");
 
 	return ESP_OK;
 }
 
 esp_err_t componentNotReadyWait(const char * name){
 
-	component_t * component = componentsGet(name);
+	component_t * pComponent = componentsGet(name);
 
-	if (!component){
+	if (!pComponent){
 		return ESP_FAIL;
 	}
 
-	EventBits_t eventBits = xEventGroupWaitBits(component->eventGroup, COMPONENT_NOT_READY, false, true, 4000 / portTICK_RATE_MS);
+	EventBits_t eventBits = xEventGroupWaitBits(pComponent->eventGroup, COMPONENT_NOT_READY, false, true, 4000 / portTICK_RATE_MS);
 
 	if (!(eventBits & COMPONENT_NOT_READY)) {
 		return ESP_FAIL;
 	}
 
-	ESP_LOGW(component->name, " not ready");
+	ESP_LOGW(pComponent->name, " not ready");
 
 	return ESP_OK;
 }
 
 
-void componentSetReady(component_t * component) {
+void componentSetReady(component_t * pComponent) {
 
-	xEventGroupSetBits(component->eventGroup, COMPONENT_READY);
-	xEventGroupClearBits(component->eventGroup, COMPONENT_NOT_READY);
-	ESP_LOGW(component->name, " is ready.");
+	xEventGroupSetBits(pComponent->eventGroup, COMPONENT_READY);
+	xEventGroupClearBits(pComponent->eventGroup, COMPONENT_NOT_READY);
+	ESP_LOGW(pComponent->name, " is ready.");
 }
 
-void componentSetNotReady(component_t * component) {
+void componentSetNotReady(component_t * pComponent) {
 
-	xEventGroupClearBits(component->eventGroup, COMPONENT_READY);
-	xEventGroupSetBits(component->eventGroup, COMPONENT_NOT_READY);
-	ESP_LOGW(component->name, " not ready.");
+	xEventGroupClearBits(pComponent->eventGroup, COMPONENT_READY);
+	xEventGroupSetBits(pComponent->eventGroup, COMPONENT_NOT_READY);
+	ESP_LOGW(pComponent->name, " not ready.");
 }
 
 void componentsGetHTML(httpd_req_t *req, char * ssiTag){
@@ -163,13 +164,25 @@ void componentsGetHTML(httpd_req_t *req, char * ssiTag){
 	}
 }
 
-void componentsLoadNVSString(nvs_handle nvsHandle, char * string, const char * key) {
+char * componentsLoadNVSString(nvs_handle nvsHandle, char * string, const char * key) {
 
 	size_t length = 512;
-	nvs_get_str(nvsHandle, key, NULL, length);
+
+	esp_err_t espError = nvs_get_str(nvsHandle, key, NULL, &length);
+
+	ESP_ERROR_CHECK_WITHOUT_ABORT(espError);
+
+	if (espError != ESP_OK){
+		return;
+	}
+
 	length++;
 
 	string = (string == NULL) ? malloc(length) : realloc(string, length);
 
-	nvs_get_str(nvsHandle, key, string, length);
+	nvs_get_str(nvsHandle, key, string, &length);
+
+	string[length] = "\0";
+
+	return string;
 }

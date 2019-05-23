@@ -3,6 +3,7 @@
 #include <esp_event_loop.h>
 #include <string.h>
 
+#include "components.h"
 #include "wifi.h"
 
 #define WIFI_AP_SSID "Beeline Configuration AP"
@@ -29,5 +30,5 @@ void wifiAccessPointInit(void) {
 
     ESP_ERROR_CHECK(esp_wifi_start());
 
-    printf("wifiAccessPointInit: finished. SSID:%s", WIFI_AP_SSID);
+    ESP_LOGW("WiFi Access Point", "Started. SSID: %s", WIFI_AP_SSID);
 }

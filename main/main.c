@@ -17,12 +17,15 @@
 #include <mqtt_client.h>
 #include <wifi.h>
 #include <http_server.h>
+#include <device.h>
 
 void app_main() {
 
 	esp_err_t error;
 
-	//Initialize NVS
+	/*
+    * Initialise NVS
+    */
     error = nvs_flash_init();
 
     if (error == ESP_ERR_NVS_NO_FREE_PAGES || error == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -46,12 +49,23 @@ void app_main() {
 
     int apMode = !gpio_get_level(0);
 
+    /*
+    * Init Components
+    */
 	wiFiInit(apMode);
 
 	httpServerInit();
 
+	deviceInit();
+
+	/*
+    * Call Init on components
+    */
 	componentsInit();
 
+	/*
+    * Start component tasks
+    */
 	componentsStart();
 
     /* Print chip information */

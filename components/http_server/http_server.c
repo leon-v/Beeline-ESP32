@@ -378,7 +378,7 @@ void httpServerPageRegister(const httpPage_t * httpPage){
 	ESP_LOGI(component.name, "Registered %s for POST", getURI.uri);
 }
 
-void httpFileRegister(const httpFile_t * httpFile){
+void httpServerFileRegister(const httpFile_t * httpFile){
 
 	httpd_uri_t getURI = {
 	    .uri      	= httpFile->uri,
@@ -406,10 +406,17 @@ static void httpServerStart(void) {
         // Set URI handlers
         ESP_LOGI(component.name, "Registering URI handlers");
 
-        for (int i = 0; i < httpPagesLength; i++){
+        int i;
+        for (i = 0; i < httpPagesLength; i++){
 
         	httpPage_t * httpPage = httpPages[i];
         	httpServerPageRegister(httpPage);
+        }
+
+        for (i = 0; i < httpFilesLength; i++){
+
+        	httpFile_t * httpFile = httpFiles[i];
+        	httpServerFileRegister(httpFile);
         }
 
         return;
