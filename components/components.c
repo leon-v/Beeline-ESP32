@@ -151,12 +151,10 @@ esp_err_t componentsQueueSend(component_t * pComponent, void * buffer) {
 		component_t * pComponentTo = components[i];
 
 		if (!pComponentTo->queueRecieveWait) {
-			ESP_LOGW(pComponentTo->name, "Not waiting");
 			continue;
 		}
 
 		if (strcmp(pComponentTo->queueRecieveWait, pComponent->name) != 0) {
-			ESP_LOGW(pComponentTo->name, "Not waiting for %s", pComponent->name);
 			continue;
 		}
 
