@@ -24,6 +24,10 @@ typedef struct {
 	void (* loadNVS)(nvs_handle nvsHandle);
 	void (* saveNVS)(nvs_handle nvsHandle);
 	EventGroupHandle_t eventGroup;
+	xQueueHandle queue;
+	unsigned int queueItemLength;
+	unsigned int queueLength;
+	const char * queueRecieveWait;
 	httpPage_t * configPage;
 } component_t;
 
@@ -47,5 +51,8 @@ void componentsSetNVSString(nvs_handle nvsHandle, char * string, const char * ke
 
 uint32_t componentsGetNVSu32(nvs_handle nvsHandle, const char * key, const uint32_t def);
 void componentsSetNVSu32(nvs_handle nvsHandle, const char * key, uint32_t value);
+
+esp_err_t componentsQueueSend(component_t * pComponent, void * buffer);
+esp_err_t componentQueueRecieve(component_t * pComponent, const char * name, void * buffer);
 
 #endif

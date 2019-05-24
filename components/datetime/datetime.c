@@ -18,10 +18,6 @@ static const httpPage_t configPage = {
 	.type	= HTTPD_TYPE_TEXT
 };
 
-// wait for time to be set
-
-static struct tm timeinfo = { 0 };
-
 static char * host;
 
 static void saveNVS(nvs_handle nvsHandle){
@@ -45,6 +41,7 @@ static void task(void *arg){
 
 
     time_t now = 0;
+    struct tm timeinfo = { 0 };
     while(timeinfo.tm_year < (2016 - 1900)) {
 
     	ESP_LOGI(component.name, "Waiting for time to get updated from %s", host);
@@ -64,6 +61,7 @@ static void task(void *arg){
 	ESP_LOGI(component.name, "%s", timestamp);
 
 	vTaskDelete(NULL);
+	return;
 }
 
 void dateTimeInit(void){

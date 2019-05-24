@@ -133,15 +133,16 @@ static void task(void * arg) {
 	}
 
 	vTaskDelete(NULL);
+	return;
 }
 
 
 void mqttConnectionInit(void){
 
-	component.configPage =	&configPage;
-	component.task =		&task;
-	component.loadNVS =		&loadNVS;
-	component.saveNVS =		&saveNVS;
+	component.configPage	= &configPage;
+	component.task			= &task;
+	component.loadNVS		= &loadNVS;
+	component.saveNVS		= &saveNVS;
 
 	componentsAdd(&component);
 }

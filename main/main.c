@@ -18,6 +18,8 @@
 #include "device.h"
 #include "mqtt_connection.h"
 #include "datetime.h"
+#include "die_temperature.h"
+#include "wake_timer.h"
 
 void app_main() {
 
@@ -61,6 +63,10 @@ void app_main() {
 	mqttConnectionInit();
 
 	dateTimeInit();
+
+	dieTemperatureInit();
+
+	wakeTimerInit();
 
 	/*
     * Call Init on components

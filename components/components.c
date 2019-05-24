@@ -62,6 +62,10 @@ void componentsInit(void){
 
 		componentSetNotReady(pComponent);
 
+		if ( (pComponent->queueItemLength) && (pComponent->queueLength) ) {
+			pComponent->queue = xQueueCreate(pComponent->queueLength, pComponent->queueItemLength);
+		}
+
 		if (pComponent->configPage != NULL){
 			httpServerAddPage(pComponent->configPage);
 		}
@@ -134,6 +138,59 @@ esp_err_t componentNotReadyWait(const char * name){
 	}
 
 	ESP_LOGW(pComponent->name, " not ready");
+
+	return ESP_OK;
+}
+
+// componentsQueueSubscribe() ??
+esp_err_t componentsQueueSend(component_t * pComponent, void * buffer) {
+
+	esp_err_t espError = ESP_FAIL;
+	for (unsigned char i=0; i < componentsLength; i++) {
+
+		component_t * pComponentTo = components[i];
+
+		if (!pComponentTo->queueRecieveWait) {
+			ESP_LOGW(pComponentTo->name, "Not waiting");
+			continue;
+		}
+
+		if (strcmp(pComponentTo->queueRecieveWait, pComponent->name) != 0) {
+			ESP_LOGW(pComponentTo->name, "Not waiting for %s", pComponent->name);
+			continue;
+		}
+
+		if (!uxQueueSpacesAvailable(pComponentTo->queue)) {
+			ESP_LOGE(pComponentTo->name, "No room in queue for %s", pComponent->name);
+			continue;
+		}
+
+		espError = ESP_OK;
+
+		xQueueSend(pComponentTo->queue, buffer, 0);
+	}
+
+	return espError;
+}
+
+esp_err_t componentQueueRecieve(component_t * pComponent, const char * name, void * buffer) {
+
+	if (!pComponent){
+		return ESP_FAIL;
+	}
+
+	if ( (!pComponent->queueItemLength) || (!pComponent->queueLength) ) {
+		return ESP_FAIL;
+	}
+
+	pComponent->queueRecieveWait = name;
+
+	if (!xQueueReceive(pComponent->queue, buffer, 60000 / portTICK_RATE_MS)) {
+		pComponent->queueRecieveWait = NULL;
+		return ESP_FAIL;
+	}
+
+	pComponent->queueRecieveWait = NULL;
 
 	return ESP_OK;
 }

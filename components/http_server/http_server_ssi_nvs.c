@@ -10,7 +10,7 @@ void httpServerSSINVSSetBit(nvs_handle nvsHandle, char * nvsKey, int bit, char *
 
 	uint8_t value;
 
-	nvs_get_u8(nvsHandle, nvsKey, &value);
+	ESP_ERROR_CHECK_WITHOUT_ABORT(nvs_get_u8(nvsHandle, nvsKey, &value));
 
 	if (atoi(postValue)) {
 		value|= (0x01 << bit);
@@ -24,7 +24,7 @@ void httpServerSSINVSSetBit(nvs_handle nvsHandle, char * nvsKey, int bit, char *
 void httpServerSSINVSGetBit(httpd_req_t *req, nvs_handle nvsHandle, char * nvsKey, int bit){
 	uint8_t value;
 	char intValStr[4];
-	nvs_get_u8(nvsHandle, nvsKey, &value);
+	ESP_ERROR_CHECK_WITHOUT_ABORT(nvs_get_u8(nvsHandle, nvsKey, &value));
 
 	value = (value >> bit) & 0x01;
 
@@ -35,8 +35,7 @@ void httpServerSSINVSGetBit(httpd_req_t *req, nvs_handle nvsHandle, char * nvsKe
 
 void httpServerSSINVSGetChecked(httpd_req_t *req, nvs_handle nvsHandle, char * nvsKey, int bit){
 	uint8_t value;
-	char intValStr[4];
-	nvs_get_u8(nvsHandle, nvsKey, &value);
+	ESP_ERROR_CHECK_WITHOUT_ABORT(nvs_get_u8(nvsHandle, nvsKey, &value));
 
 	value = (value >> bit) & 0x01;
 
@@ -45,15 +44,15 @@ void httpServerSSINVSGetChecked(httpd_req_t *req, nvs_handle nvsHandle, char * n
 	}
 }
 
-void httpServerSSINVSSetInt32(nvs_handle nvsHandle, char * nvsKey, char * postValue){
-	nvs_set_u32(nvsHandle, nvsKey, atoi(postValue));
+void httpServerSSINVSSetu32(nvs_handle nvsHandle, char * nvsKey, char * postValue){
+	ESP_ERROR_CHECK_WITHOUT_ABORT(nvs_set_u32(nvsHandle, nvsKey, atoi(postValue)));
 }
 
-void httpServerSSINVSGetInt32(httpd_req_t *req, nvs_handle nvsHandle, char * nvsKey){
+void httpServerSSINVSGetu32(httpd_req_t *req, nvs_handle nvsHandle, char * nvsKey){
 	uint32_t value;
 	char intValStr[32];
 
-	nvs_get_u32(nvsHandle, nvsKey, &value);
+	ESP_ERROR_CHECK_WITHOUT_ABORT(nvs_get_u32(nvsHandle, nvsKey, &value));
 
 	itoa(value, intValStr, 10);
 
@@ -68,7 +67,7 @@ void httpServerSSINVSGetString(httpd_req_t *req, nvs_handle nvsHandle, char * nv
 	size_t nvsLength = CONFIG_HTTP_NVS_MAX_STRING_LENGTH;
 	char strVal[CONFIG_HTTP_NVS_MAX_STRING_LENGTH];
 
-	nvs_get_str(nvsHandle, nvsKey, strVal, &nvsLength);
+	ESP_ERROR_CHECK_WITHOUT_ABORT(nvs_get_str(nvsHandle, nvsKey, strVal, &nvsLength));
 	nvsLength--;
 
 	if (nvsLength > 0) {
@@ -80,7 +79,7 @@ void httpServerSSINVSGetString(httpd_req_t *req, nvs_handle nvsHandle, char * nv
 void httpServerSSINVSGet(httpd_req_t *req, char * ssiTag){
 
 	char * nvsName = strtok(ssiTag, ":");
-	char * error = NULL;
+	esp_err_t espError;
 	if (!nvsName) {
 		ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, "Missing NVS name"));
 		return;
@@ -99,18 +98,18 @@ void httpServerSSINVSGet(httpd_req_t *req, char * ssiTag){
 	}
 
 	nvs_handle nvsHandle;
-	error = nvs_open(nvsName, NVS_READONLY, &nvsHandle);
+	espError = nvs_open(nvsName, NVS_READONLY, &nvsHandle);
 
-	if (error != ESP_OK){
-		ESP_ERROR_CHECK_WITHOUT_ABORT(error);
+	if (espError != ESP_OK){
+		ESP_ERROR_CHECK_WITHOUT_ABORT(espError);
 		return;
 	}
 
 	if (strcmp(nvsType, "string") == 0){
 		httpServerSSINVSGetString(req, nvsHandle, nvsKey);
 	}
-	else if (strcmp(nvsType, "int") == 0){
-		httpServerSSINVSGetInt32(req, nvsHandle, nvsKey);
+	else if (strcmp(nvsType, "u32") == 0){
+		httpServerSSINVSGetu32(req, nvsHandle, nvsKey);
 	}
 	else if (strcmp(nvsType, "bit") == 0){
 
@@ -157,13 +156,16 @@ void httpServerSSINVSSet(char * ssiTag, char * value){
 	if (strcmp(nvsType, "string") == 0){
 		httpServerSSINVSSetString(nvsHandle, nvsKey, value);
 	}
-	else if (strcmp(nvsType, "int") == 0){
-		httpServerSSINVSSetInt32(nvsHandle, nvsKey, value);
+	else if (strcmp(nvsType, "u32") == 0){
+		httpServerSSINVSSetu32(nvsHandle, nvsKey, value);
 	}
 	else if (strcmp(nvsType, "bit") == 0){
 
 		char * bitStr = strtok(NULL, ":");
 		httpServerSSINVSSetBit(nvsHandle, nvsKey, atoi(bitStr), value);
+	}
+	else{
+		ESP_LOGE(TAG, "SSI NVS type %s not handled", nvsType);
 	}
 
 	ESP_ERROR_CHECK(nvs_commit(nvsHandle));
