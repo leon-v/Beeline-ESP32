@@ -81,7 +81,7 @@ void wiFiInit(int apMode) {
 		wifiClientInit();
 		ESP_LOGW(component.name, "Starting in STA mode");
 	}
-	
 
-	
+
+
 }

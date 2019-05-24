@@ -21,11 +21,13 @@ void wifiClientSetConfig(void) {
 
 	esp_wifi_stop();
 
+	ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+
 	ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifiConfig));
 
 	ESP_ERROR_CHECK(esp_wifi_start());
 
-	// ESP_LOGI(component.name, "loaded configuration and restarting.");
+	ESP_LOGI("WiFi Client", "loaded configuration and restarting. %s/%s", wifiConfig.sta.ssid, wifiConfig.sta.password);
 }
 
 static void saveNVS(nvs_handle nvsHandle) {
@@ -58,8 +60,6 @@ void wifiClientInit(void) {
     ESP_ERROR_CHECK(esp_wifi_init(&wifiInitConfig));
 
     ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
-
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
 
     ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_MIN_MODEM));
 
