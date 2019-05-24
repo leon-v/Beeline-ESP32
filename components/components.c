@@ -108,7 +108,7 @@ esp_err_t componentReadyWait(const char * name){
 		return ESP_FAIL;
 	}
 
-	EventBits_t eventBits = xEventGroupWaitBits(pComponent->eventGroup, COMPONENT_READY, false, true, 4000 / portTICK_RATE_MS);
+	EventBits_t eventBits = xEventGroupWaitBits(pComponent->eventGroup, COMPONENT_READY, false, true, 60000 / portTICK_RATE_MS);
 
 	if (!(eventBits & COMPONENT_READY)) {
 		return ESP_FAIL;
@@ -127,7 +127,7 @@ esp_err_t componentNotReadyWait(const char * name){
 		return ESP_FAIL;
 	}
 
-	EventBits_t eventBits = xEventGroupWaitBits(pComponent->eventGroup, COMPONENT_NOT_READY, false, true, 4000 / portTICK_RATE_MS);
+	EventBits_t eventBits = xEventGroupWaitBits(pComponent->eventGroup, COMPONENT_NOT_READY, false, true, 60000 / portTICK_RATE_MS);
 
 	if (!(eventBits & COMPONENT_NOT_READY)) {
 		return ESP_FAIL;

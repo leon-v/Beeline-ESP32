@@ -12,12 +12,12 @@
 #include <nvs_flash.h>
 
 // Application includes
-#include <components.h>
-#include <config.h>
-#include <mqtt_client.h>
-#include <wifi.h>
-#include <http_server.h>
-#include <device.h>
+#include "components.h"
+#include "wifi.h"
+#include "http_server.h"
+#include "device.h"
+#include "mqtt_connection.h"
+#include "datetime.h"
 
 void app_main() {
 
@@ -58,7 +58,9 @@ void app_main() {
 
 	deviceInit();
 
-	mqttClientInit();
+	mqttConnectionInit();
+
+	dateTimeInit();
 
 	/*
     * Call Init on components

@@ -69,9 +69,10 @@ void httpServerSSINVSGetString(httpd_req_t *req, nvs_handle nvsHandle, char * nv
 	char strVal[CONFIG_HTTP_NVS_MAX_STRING_LENGTH];
 
 	nvs_get_str(nvsHandle, nvsKey, strVal, &nvsLength);
+	nvsLength--;
 
-	if (nvsLength > 0){
-		ESP_ERROR_CHECK(httpd_resp_send_chunk(req, strVal, nvsLength - 1));
+	if (nvsLength > 0) {
+		ESP_ERROR_CHECK(httpd_resp_send_chunk(req, strVal, nvsLength));
 	}
 
 }

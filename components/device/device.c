@@ -57,3 +57,7 @@ void deviceInit(void) {
 
 	componentsAdd(&component);
 }
+
+char * deviceGetUniqueName(void){
+	return uniqueName;
+}

@@ -11,7 +11,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "http_server.h"
+#include "./http_server/http_server.h"
 
 #define COMPONENT_READY		BIT0
 #define COMPONENT_NOT_READY	BIT1
