@@ -3,14 +3,15 @@
 #include <esp_log.h>
 
 #include "http_server.h"
+#include "components.h"
 
 #define TAG "HTTP Server SSI NVS"
 
 void httpServerSSINVSSetBit(nvs_handle nvsHandle, char * nvsKey, int bit, char * postValue){
 
-	uint8_t value;
+	uint64_t value = 0;
 
-	ESP_ERROR_CHECK_WITHOUT_ABORT(nvs_get_u8(nvsHandle, nvsKey, &value));
+	ESP_ERROR_CHECK_WITHOUT_ABORT(nvs_get_u64(nvsHandle, nvsKey, &value));
 
 	if (atoi(postValue)) {
 		value|= (0x01 << bit);
@@ -19,27 +20,30 @@ void httpServerSSINVSSetBit(nvs_handle nvsHandle, char * nvsKey, int bit, char *
 		value&= ~(0x01 << bit);
 	}
 
-	ESP_ERROR_CHECK(nvs_set_u8(nvsHandle, nvsKey, value));
+	ESP_ERROR_CHECK(nvs_set_u64(nvsHandle, nvsKey, value));
 }
+
 void httpServerSSINVSGetBit(httpd_req_t *req, nvs_handle nvsHandle, char * nvsKey, int bit){
-	uint8_t value;
+
+	uint64_t value;
 	char intValStr[4];
-	ESP_ERROR_CHECK_WITHOUT_ABORT(nvs_get_u8(nvsHandle, nvsKey, &value));
+	ESP_ERROR_CHECK_WITHOUT_ABORT(nvs_get_u64(nvsHandle, nvsKey, &value));
 
-	value = (value >> bit) & 0x01;
-
-	itoa(value, intValStr, 10);
+	if ((value >> bit) & 0x01) {
+		strcpy(intValStr, "1");
+	}
+	else{
+		strcpy(intValStr, "0");
+	}
 
 	ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, intValStr));
 }
 
 void httpServerSSINVSGetChecked(httpd_req_t *req, nvs_handle nvsHandle, char * nvsKey, int bit){
-	uint8_t value;
-	ESP_ERROR_CHECK_WITHOUT_ABORT(nvs_get_u8(nvsHandle, nvsKey, &value));
+	uint64_t value;
+	ESP_ERROR_CHECK_WITHOUT_ABORT(nvs_get_u64(nvsHandle, nvsKey, &value));
 
-	value = (value >> bit) & 0x01;
-
-	if (value){
+	if ((value >> bit) & 0x01) {
 		ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, "checked"));
 	}
 }
@@ -171,4 +175,11 @@ void httpServerSSINVSSet(char * ssiTag, char * value){
 	ESP_ERROR_CHECK(nvs_commit(nvsHandle));
 
 	nvs_close(nvsHandle);
+
+	component_t * pComponent = componentsGet(nvsName);
+
+	if (pComponent){
+		componentsLoadNVS(pComponent);
+	}
+
 }

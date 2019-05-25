@@ -16,6 +16,11 @@ void componentsAdd(component_t * pComponent){
 
 void componentsLoadNVS(component_t * pComponent){
 
+	if (!pComponent){
+		ESP_LOGE(TAG, "Component passed is not valid");
+		return;
+	}
+
 	if (pComponent->loadNVS == NULL){
 		return;
 	}
@@ -146,7 +151,7 @@ esp_err_t componentNotReadyWait(const char * name){
 	return ESP_OK;
 }
 
-// componentsQueueSubscribe() ??
+
 esp_err_t componentsQueueSend(component_t * pComponent, void * buffer) {
 
 	esp_err_t espError = ESP_FAIL;
@@ -214,7 +219,10 @@ void componentSetNotReady(component_t * pComponent) {
 
 void componentsGetHTML(httpd_req_t *req, char * ssiTag){
 
-	if (strcmp(ssiTag, "configLinks") == 0){
+	char * command = strtok(ssiTag, ":");
+	command = command ? command : ssiTag;
+
+	if (strcmp(command, "configLinks") == 0){
 
 		for (unsigned char i=0; i < componentsLength; i++) {
 
@@ -232,6 +240,95 @@ void componentsGetHTML(httpd_req_t *req, char * ssiTag){
 			ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, ">"));
 			ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, pComponent->name));
 			ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, "</li>"));
+		}
+
+
+	}
+	else if(strcmp(command, "routing") == 0) {
+
+		char * name = strtok(NULL, ":");
+		if (!name) {
+			ESP_LOGE(TAG, "Missing NVS type");
+			return;
+		}
+
+		nvs_handle nvsHandle;
+		uint64_t routeBits = 0;
+		if (nvs_open(name, NVS_READONLY, &nvsHandle) == ESP_OK){
+			ESP_ERROR_CHECK_WITHOUT_ABORT(nvs_get_u64(nvsHandle, "_route", &routeBits));
+			nvs_close(nvsHandle);
+		}
+
+		for (unsigned char i=0; i < componentsLength; i++) {
+
+			component_t * pComponent = components[i];
+
+			if (pComponent->messagesIn == NULL){
+				continue;
+			}
+
+			char iString[4];
+			itoa(i, iString, 10);
+
+			if (i > 64){
+				ESP_LOGE(TAG, "Currently using uint32_t so cant use bit %d", i);
+				continue;
+			}
+
+			char checked[26];
+			char boolChecked[2];
+
+			if ((routeBits >> i) & 0x01) {
+				strcpy(checked, "checked=\"checked\" ");
+				strcpy(boolChecked, "1");
+			}
+			else{
+				strcpy(checked, "notChecked=\"notChecked\" ");
+				strcpy(boolChecked, "0");
+			}
+
+			/*
+			<input name="nvs:name:bit:_route:0" type="hidden" id="__route0" value="<!--#nvs:name:bit:_route:0-->">
+			<input type="checkbox" id="_route0" for="__route0" onchange="checkboxChange(this)" <!--#nvs:name:checked:_route:0--> >
+			<label for="__route0">Forward to LoRa</label><br>
+			*/
+
+			ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, "<input "));
+			ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, "name=\"nvs:"));
+			ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, name));
+			ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, ":bit:_route:"));
+			ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, iString));
+			ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, "\" "));
+			ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, "type=\"hidden\" "));
+			ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, "id=\"__route"));
+			ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, iString));
+			ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, "\" "));
+			ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, "value=\""));
+			ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, boolChecked));
+			ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, "\" "));
+			ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, ">"));
+
+			ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, "<input "));
+			ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, "type=\"checkbox\" "));
+			ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, "id=\"_route"));
+			ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, iString));
+			ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, "\" "));
+			ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, "for=\"__route"));
+			ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, iString));
+			ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, "\" "));
+			ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, "onchange=\"checkboxChange(this)\" "));
+			ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, checked));
+			ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, ">"));
+
+			ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, "<label "));
+			ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, "for=\"__route"));
+			ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, iString));
+			ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, "\" "));
+			ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, ">"));
+			ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, "Forward to "));
+			ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, pComponent->name));
+			ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, "</label>"));
+			ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, "<br>"));
 		}
 
 
@@ -304,11 +401,22 @@ void componentSendMessage(component_t * pComponentFrom, message_t * pMessage) {
 
 	esp_err_t espError = ESP_FAIL;
 
+	nvs_handle nvsHandle;
+	uint64_t routeBits = 0;
+	if (nvs_open(pComponentFrom->name, NVS_READONLY, &nvsHandle) == ESP_OK){
+		ESP_ERROR_CHECK_WITHOUT_ABORT(nvs_get_u64(nvsHandle, "_route", &routeBits));
+		nvs_close(nvsHandle);
+	}
+
 	for (unsigned char i=0; i < componentsLength; i++) {
 
 		component_t * pComponentTo = components[i];
 
 		if (!pComponentTo->messagesIn) {
+			continue;
+		}
+
+		if ( ((routeBits >> i) & 0x01) == 0){
 			continue;
 		}
 
