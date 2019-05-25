@@ -1,4 +1,5 @@
 #include <mqtt_client.h>
+#include <sys/param.h>
 
 #include "components.h"
 #include "device.h"
@@ -48,6 +49,9 @@ static esp_err_t mqttConnectionEventHandler(esp_mqtt_event_handle_t event){
 	esp_mqtt_client_handle_t client = event->client;
     int msg_id;
 
+    char topic[64] = {0};
+	char value[64] = {0};
+
     // your_context_t *context = event->context;
     switch (event->event_id) {
 
@@ -83,7 +87,67 @@ static esp_err_t mqttConnectionEventHandler(esp_mqtt_event_handle_t event){
 		break;
 
         case MQTT_EVENT_DATA:
-        	ESP_LOGI(component.name, "MQTT_EVENT_DATA");
+
+        	strncpy(topic, event->topic,  MIN(event->topic_len, sizeof(topic)));
+        	strncpy(value, event->data,  MIN(event->data_len, sizeof(value)));
+
+        	// ESP_LOGI(TAG, "topic %s", topic);
+
+        	const char * delim = "/";
+        	char * subTopic = strtok(topic, delim);
+
+        	char * subTopics[3] = {NULL, NULL, NULL};
+
+        	int index = 0;
+        	while (subTopic != NULL){
+
+        		if (index > 1) {
+        			subTopics[0] = subTopics[1];
+        		}
+        		if (index > 0) {
+        			subTopics[1] = subTopics[2];
+        		}
+
+        		subTopics[2] = subTopic;
+
+        		index++;
+
+        		subTopic = strtok(NULL, delim);
+        	}
+
+        	if (!(subTopics[0] && subTopics[1] && subTopics[2])) {
+        		ESP_LOGE(component.name, "Unable to get last 3 sub topics device/sensor/valueype");
+        		break;
+        	}
+
+        	message_t message;
+
+        	strcpy(message.deviceName, subTopics[0]);
+        	strcpy(message.sensorName, subTopics[1]);
+
+        	if (strcmp(subTopics[2], "int") == 0) {
+				message.valueType = MESSAGE_INT;
+				message.intValue = atoi(value);
+			}
+			else if (strcmp(subTopics[2], "float") == 0) {
+				message.valueType = MESSAGE_FLOAT;
+				message.floatValue = atof(value);
+			}
+			else if (strcmp(subTopics[2], "double") == 0) {
+				message.valueType = MESSAGE_DOUBLE;
+				message.doubleValue = atof(value);
+			}
+			else if (strcmp(subTopics[2], "string") == 0) {
+				message.valueType = MESSAGE_STRING;
+				strcpy(message.stringValue, value);
+			}
+			else{
+				ESP_LOGE(component.name, "Unknown type '%s'", subTopics[2]);
+        		break;
+			}
+
+			componentSendMessage(&component, &message);
+
 		break;
 
         case MQTT_EVENT_ERROR:
