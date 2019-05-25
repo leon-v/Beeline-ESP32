@@ -21,6 +21,7 @@
 #include "datetime.h"
 #include "die_temperature.h"
 #include "wake_timer.h"
+#include "elastic.h"
 
 void app_main() {
 
@@ -94,6 +95,8 @@ void app_main() {
 	dieTemperatureInit();
 
 	wakeTimerInit();
+
+	elasticInit();
 
 	/*
     * Call Init on components
