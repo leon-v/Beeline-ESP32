@@ -7,8 +7,6 @@
 
 static component_t component = {
 	.name			= "Date Time",
-	.messagesIn		= 1,
-	.messagesOut	= 1
 };
 
 static const char config_html_start[] asm("_binary_datetime_config_html_start");

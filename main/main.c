@@ -10,6 +10,7 @@
 // esp-idf includes
 #include <esp_spi_flash.h>
 #include <nvs_flash.h>
+#include <esp_pm.h>
 
 // Application includes
 #include "components.h"
@@ -37,6 +38,32 @@ void app_main() {
 
     ESP_ERROR_CHECK(error);
 
+
+    /* Print chip information */
+    esp_chip_info_t chip_info;
+    esp_chip_info(&chip_info);
+    printf("This is ESP32 chip with %d CPU cores, WiFi%s%s, ",
+		chip_info.cores,
+		(chip_info.features & CHIP_FEATURE_BT) ? "/BT" : "",
+		(chip_info.features & CHIP_FEATURE_BLE) ? "/BLE" : ""
+	);
+
+    printf("silicon revision %d, ", chip_info.revision);
+    printf("%dMB %s flash\n", spi_flash_get_chip_size() / (1024 * 1024), (chip_info.features & CHIP_FEATURE_EMB_FLASH) ? "embedded" : "external");
+
+    #if CONFIG_PM_ENABLE
+    // Configure dynamic frequency scaling:
+    // maximum and minimum frequencies are set in sdkconfig,
+    // automatic light sleep is enabled if tickless idle support is enabled.
+    esp_pm_config_esp32_t pm_config = {
+            .max_freq_mhz = CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ,
+            .min_freq_mhz = CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ,
+	#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+            .light_sleep_enable = true
+	#endif
+	};
+	ESP_ERROR_CHECK( esp_pm_configure(&pm_config) );
+	#endif // CONFIG_PM_ENABLE
 
     // Setup config button
 	gpio_config_t io_conf;
@@ -77,16 +104,4 @@ void app_main() {
     * Start component tasks
     */
 	componentsStart();
-
-    /* Print chip information */
-    esp_chip_info_t chip_info;
-    esp_chip_info(&chip_info);
-    printf("This is ESP32 chip with %d CPU cores, WiFi%s%s, ",
-		chip_info.cores,
-		(chip_info.features & CHIP_FEATURE_BT) ? "/BT" : "",
-		(chip_info.features & CHIP_FEATURE_BLE) ? "/BLE" : ""
-	);
-
-    printf("silicon revision %d, ", chip_info.revision);
-    printf("%dMB %s flash\n", spi_flash_get_chip_size() / (1024 * 1024), (chip_info.features & CHIP_FEATURE_EMB_FLASH) ? "embedded" : "external");
 }

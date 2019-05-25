@@ -19,8 +19,6 @@ static void loadNVS(nvs_handle nvsHandle){
 
 static component_t component = {
 	.name = "Device",
-	.messagesIn = 0,
-	.messagesOut = 0,
 	.configPage = &httpPageConfigHTML,
 	.loadNVS = &loadNVS,
 	.saveNVS = &saveNVS

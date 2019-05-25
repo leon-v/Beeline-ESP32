@@ -94,10 +94,69 @@ static esp_err_t mqttConnectionEventHandler(esp_mqtt_event_handle_t event){
     return ESP_OK;
 }
 
+char * mqttConnectionTopicFromMessage(message_t * message){
+
+	static char topic[member_size(message_t, deviceName) + member_size(message_t, sensorName) + 64] = {0};
+
+	// ESP_LOG
+
+	strcpy(topic, outTopic);
+	strcat(topic, "/");
+	strcat(topic, message->deviceName);
+	strcat(topic, "/");
+	strcat(topic, message->sensorName);
+
+	switch (message->valueType){
+
+		case MESSAGE_INT:
+			strcat(topic, "/int");
+		break;
+
+		case MESSAGE_FLOAT:
+			strcat(topic, "/float");
+		break;
+
+		case MESSAGE_DOUBLE:
+			strcat(topic, "/double");
+		break;
+
+		case MESSAGE_STRING:
+			strcat(topic, "/string");
+		break;
+	}
+
+	return topic;
+}
+static char * mqttConnectionValueFromMessage(message_t * message){
+
+	static char value[member_size(message_t, stringValue)] = {0};
+
+	switch (message->valueType){
+
+		case MESSAGE_INT:
+			sprintf(value, "%d", message->intValue);
+		break;
+
+		case MESSAGE_FLOAT:
+			sprintf(value, "%.4f", message->floatValue);
+		break;
+
+		case MESSAGE_DOUBLE:
+			sprintf(value, "%.8f", message->doubleValue);
+		break;
+
+		case MESSAGE_STRING:
+			sprintf(value, "%s", message->stringValue);
+		break;
+	}
+
+	return value;
+}
+
 static esp_mqtt_client_handle_t client;
 static void task(void * arg) {
 
-	while (1) {
+	while (true) {
 
 		if (componentReadyWait("WiFi") != ESP_OK) {
 			continue;
@@ -119,17 +178,23 @@ static void task(void * arg) {
 
     	esp_mqtt_client_start(client);
 
-    	if (componentReadyWait(component.name) != ESP_OK) {
-			continue;
-		}
+    	while (componentReadyWait(component.name) == ESP_OK) {
 
-		ESP_LOGW(component.name, "Connected!!!!!!\n");
+    		message_t message;
+    		if (componentMessageRecieve(&component, &message) != ESP_OK) {
+    			continue;
+    		}
 
-		vTaskDelay(10000 / portTICK_RATE_MS);
+    		ESP_LOGW(component.name, "Got messsage from %s", message.sensorName);
+
+    		char * topic = mqttConnectionTopicFromMessage(&message);
+    		char * value = mqttConnectionValueFromMessage(&message);
+
+    		int mqttMessageID;
+			mqttMessageID = esp_mqtt_client_publish(client, topic, value, 0, 1, 0);
+    	}
 
 		esp_mqtt_client_stop(client);
-
-		vTaskDelay(10000 / portTICK_RATE_MS);
 	}
 
 	vTaskDelete(NULL);

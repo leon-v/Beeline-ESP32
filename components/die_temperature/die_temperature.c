@@ -1,6 +1,7 @@
 #include <soc/sens_reg.h>
 
 #include "components.h"
+#include "device.h"
 
 static component_t component = {
 	.name = "Die Temp",
@@ -25,7 +26,7 @@ static void loadNVS(nvs_handle nvsHandle){
 	timerCount =		componentsGetNVSu32(nvsHandle, "timerCount", 1);
 }
 
-static int dieSensorsGetTemperature (void) {
+static int dieTemperatureGet (void) {
     SET_PERI_REG_BITS(SENS_SAR_MEAS_WAIT2_REG, SENS_FORCE_XPD_SAR, 3, SENS_FORCE_XPD_SAR_S);
     SET_PERI_REG_BITS(SENS_SAR_TSENS_CTRL_REG, SENS_TSENS_CLK_DIV, 10, SENS_TSENS_CLK_DIV_S);
     CLEAR_PERI_REG_MASK(SENS_SAR_TSENS_CTRL_REG, SENS_TSENS_POWER_UP);
@@ -41,13 +42,30 @@ static int dieSensorsGetTemperature (void) {
 static unsigned char queueItem;
 static void task(void * arg) {
 
+	int count = 0;
+
 	while (true) {
 
 		if (componentQueueRecieve(&component, "Wake Timer", &queueItem) != ESP_OK) {
 			continue;
 		}
 
+		if (count++ < timerCount) {
+			continue;
+		}
+
+		count = 0;
+
 		ESP_LOGW(component.name, "Got queue item from wake timer");
+
+		message_t message;
+		strcpy(message.deviceName, deviceGetUniqueName());
+		strcpy(message.sensorName, component.name);
+
+		message.valueType = MESSAGE_INT;
+		message.intValue = dieTemperatureGet();
+
+		componentSendMessage(&component, &message);
 	}
 
 	vTaskDelete(NULL);

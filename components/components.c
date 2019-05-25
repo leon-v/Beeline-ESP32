@@ -66,6 +66,10 @@ void componentsInit(void){
 			pComponent->queue = xQueueCreate(pComponent->queueLength, pComponent->queueItemLength);
 		}
 
+		if (pComponent->messagesIn) {
+			pComponent->messageQueue = xQueueCreate(3, sizeof(message_t));
+		}
+
 		if (pComponent->configPage != NULL){
 			httpServerAddPage(pComponent->configPage);
 		}
@@ -293,4 +297,47 @@ uint32_t componentsGetNVSu32(nvs_handle nvsHandle, const char * key, const uint3
 // esp_err_t nvs_set_u32 (nvs_handle handle, const char* key, uint32_t value);
 void componentsSetNVSu32(nvs_handle nvsHandle, const char * key, uint32_t value) {
 	ESP_ERROR_CHECK(nvs_set_u32 (nvsHandle, key, value));
+}
+
+
+void componentSendMessage(component_t * pComponentFrom, message_t * pMessage) {
+
+	esp_err_t espError = ESP_FAIL;
+
+	for (unsigned char i=0; i < componentsLength; i++) {
+
+		component_t * pComponentTo = components[i];
+
+		if (!pComponentTo->messagesIn) {
+			continue;
+		}
+
+		if (!uxQueueSpacesAvailable(pComponentTo->messageQueue)) {
+			ESP_LOGE(pComponentTo->name, "No room in message queue for %s", pComponentFrom->name);
+			continue;
+		}
+
+		espError = ESP_OK;
+
+		xQueueSend(pComponentTo->messageQueue, pMessage, 0);
+	}
+
+	return espError;
+}
+
+esp_err_t componentMessageRecieve(component_t * pComponent, message_t * pMessage) {
+
+	if (!pComponent){
+		return ESP_FAIL;
+	}
+
+	if (!pComponent->messagesIn) {
+		return ESP_FAIL;
+	}
+
+	if (!xQueueReceive(pComponent->messageQueue, pMessage, 60000 / portTICK_RATE_MS)) {
+		return ESP_FAIL;
+	}
+
+	return ESP_OK;
 }

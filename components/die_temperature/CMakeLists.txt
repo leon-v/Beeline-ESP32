@@ -10,6 +10,6 @@ file(GLOB bin_files "*.png")
 set(COMPONENT_EMBED_FILES ${bin_files})
 
 set(COMPONENT_REQUIRES)
-set(COMPONENT_PRIV_REQUIRES components)
+set(COMPONENT_PRIV_REQUIRES components device)
 
 register_component()
