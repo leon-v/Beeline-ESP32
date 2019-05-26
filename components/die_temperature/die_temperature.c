@@ -44,6 +44,8 @@ static void task(void * arg) {
 
 	int count = 0;
 
+	componentSetReady(&component);
+
 	while (true) {
 
 		if (componentQueueRecieve(&component, "Wake Timer", &queueItem) != ESP_OK) {

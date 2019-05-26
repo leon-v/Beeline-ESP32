@@ -9,7 +9,8 @@
 static component_t component = {
 	.name = "HTTP Server",
 	.messagesIn = 0,
-	.messagesOut = 0
+	.messagesOut = 0,
+	.priority = 10
 };
 
 #define HTTP_STACK_SIZE 16384
@@ -436,6 +437,8 @@ void httpServerStop(void) {
 static void task(void *arg){
 
 	EventBits_t EventBits;
+
+	componentSetReady(&component);
 
 	while (1){
 

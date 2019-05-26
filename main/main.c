@@ -22,6 +22,7 @@
 #include "die_temperature.h"
 #include "wake_timer.h"
 #include "elastic.h"
+#include "radio.h"
 
 void app_main() {
 
@@ -79,6 +80,9 @@ void app_main() {
 
     int apMode = !gpio_get_level(0);
 
+    //install gpio isr service
+    gpio_install_isr_service(ESP_INTR_FLAG_LEVEL3);
+
     /*
     * Init Components
     */
@@ -97,6 +101,8 @@ void app_main() {
 	wakeTimerInit();
 
 	elasticInit();
+
+	radioInit();
 
 	/*
     * Call Init on components

@@ -123,6 +123,8 @@ static esp_err_t elasticEventHandler(esp_http_client_event_t *evt) {
 
 static void task(void * arg) {
 
+	componentSetReady(&component);
+
 	while (true){
 
 		if (componentReadyWait("WiFi") != ESP_OK) {

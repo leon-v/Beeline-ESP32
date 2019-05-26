@@ -22,6 +22,7 @@ typedef struct {
 	const unsigned int messagesOut : 1;
 	xQueueHandle messageQueue;
 	void (* task)(void *);
+	unsigned int priority; // 0 to 10;
 	void (* loadNVS)(nvs_handle nvsHandle);
 	void (* saveNVS)(nvs_handle nvsHandle);
 	EventGroupHandle_t eventGroup;

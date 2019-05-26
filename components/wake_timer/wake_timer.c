@@ -24,6 +24,8 @@ static void loadNVS(nvs_handle nvsHandle){
 static unsigned char queueItem = 1;
 static void task(void * arg) {
 
+	componentSetReady(&component);
+
 	while (true){
 
 		ESP_LOGW(component.name, "Delay %d ms", time);

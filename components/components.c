@@ -91,7 +91,7 @@ void componentsStart(void){
 		component_t * pComponent = components[i];
 
 		if (pComponent->task != NULL){
-			xTaskCreate(pComponent->task, pComponent->name, 2048, NULL, 10, NULL);
+			xTaskCreate(pComponent->task, pComponent->name, 2048, NULL, 10 + pComponent->priority, NULL);
 		}
 
 	}
@@ -263,7 +263,7 @@ void componentsGetHTML(httpd_req_t *req, char * ssiTag){
 
 			component_t * pComponent = components[i];
 
-			if (pComponent->messagesIn == NULL){
+			if (!pComponent->messagesIn){
 				continue;
 			}
 
@@ -354,7 +354,7 @@ char * componentsGetNVSString(nvs_handle nvsHandle, char * string, const char * 
 
 	else if (espError != ESP_OK){
 		ESP_ERROR_CHECK_WITHOUT_ABORT(espError);
-		return;
+		return NULL;
 	}
 
 	string = (string == NULL) ? malloc(length) : realloc(string, length);
@@ -385,7 +385,6 @@ uint32_t componentsGetNVSu32(nvs_handle nvsHandle, const char * key, const uint3
 
 	else if (espError != ESP_OK){
 		ESP_ERROR_CHECK_WITHOUT_ABORT(espError);
-		return;
 	}
 
 	return value;
@@ -398,8 +397,6 @@ void componentsSetNVSu32(nvs_handle nvsHandle, const char * key, uint32_t value)
 
 
 void componentSendMessage(component_t * pComponentFrom, message_t * pMessage) {
-
-	esp_err_t espError = ESP_FAIL;
 
 	nvs_handle nvsHandle;
 	uint64_t routeBits = 0;
@@ -425,12 +422,8 @@ void componentSendMessage(component_t * pComponentFrom, message_t * pMessage) {
 			continue;
 		}
 
-		espError = ESP_OK;
-
 		xQueueSend(pComponentTo->messageQueue, pMessage, 0);
 	}
-
-	return espError;
 }
 
 esp_err_t componentMessageRecieve(component_t * pComponent, message_t * pMessage) {
