@@ -56,7 +56,7 @@ static const httpPage_t configPage = {
 
 static void IRAM_ATTR radioSX1278ISR(void * arg){
 
-	message_t message;
+	static message_t message;
 
 	message.valueType = MESSAGE_INTERRUPT;
 	message.intValue = (uint32_t) arg;
@@ -293,12 +293,10 @@ static void task(void * arg) {
 		sx1278SetSyncWord( (unsigned char) sx1278RXSync);
 		sx1278Receive();    // put into receive mode
 
-		message_t message;
+		static message_t message;
 		if (componentMessageRecieve(&component, &message) != ESP_OK) {
 			continue;
 		}
-
-		ESP_LOGW(component.name, "Got message from %s", message.sensorName);
 
 		if (message.valueType != MESSAGE_INTERRUPT){
 			radioSX1278SendRadioMessage(&message);

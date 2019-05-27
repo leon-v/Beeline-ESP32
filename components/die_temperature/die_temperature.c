@@ -44,13 +44,18 @@ static void task(void * arg) {
 
 	int count = 0;
 
-	componentSetReady(&component);
-
 	while (true) {
+
+		if (componentReadyWait("Wake Timer") != ESP_OK) {
+			continue;
+		}
+
+		componentSetReady(&component);
 
 		if (componentQueueRecieve(&component, "Wake Timer", &queueItem) != ESP_OK) {
 			continue;
 		}
+
 
 		if (count++ < timerCount) {
 			continue;
@@ -60,7 +65,7 @@ static void task(void * arg) {
 
 		ESP_LOGW(component.name, "Got queue item from wake timer");
 
-		message_t message;
+		static message_t message;
 		strcpy(message.deviceName, deviceGetUniqueName());
 		strcpy(message.sensorName, component.name);
 

@@ -1,7 +1,11 @@
 #include "components.h"
 
+static component_t component = {
+	.name = "Device"
+};
+
 static const char config_html_start[] asm("_binary_device_config_html_start");
-static const httpPage_t httpPageConfigHTML = {
+static const httpPage_t configPage = {
 	.uri	= "/device_config.html",
 	.page	= config_html_start,
 	.type	= HTTPD_TYPE_TEXT
@@ -16,13 +20,6 @@ static void saveNVS(nvs_handle nvsHandle){
 static void loadNVS(nvs_handle nvsHandle){
 	uniqueName = componentsGetNVSString(nvsHandle, uniqueName, "uniqueName", "device");
 }
-
-static component_t component = {
-	.name = "Device",
-	.configPage = &httpPageConfigHTML,
-	.loadNVS = &loadNVS,
-	.saveNVS = &saveNVS
-};
 
 void deviceInit(void) {
 
@@ -52,6 +49,10 @@ void deviceInit(void) {
 		ESP_ERROR_CHECK(nvs_commit(nvsHandle));
 		nvs_close(nvsHandle);
 	}
+
+	component.configPage	= &configPage;
+	component.loadNVS		= &loadNVS;
+	component.saveNVS		= &saveNVS;
 
 	componentsAdd(&component);
 }

@@ -8,16 +8,16 @@ void httpServerSSIPage(httpd_req_t *req, char * ssiTag) {
 	char * error = NULL;
 
 	if (strcmp(ssiTag, "template_top_html") == 0){
-		ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, template_top_html));
+		ESP_ERROR_CHECK_WITHOUT_ABORT(httpd_resp_sendstr_chunk(req, template_top_html));
 	}
 
 	else if (strcmp(ssiTag, "template_bottom_html") == 0){
-		ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, template_bottom_html));
+		ESP_ERROR_CHECK_WITHOUT_ABORT(httpd_resp_sendstr_chunk(req, template_bottom_html));
 	}
 
 	else{
-		ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, "SSI Page tag not found "));
-		ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, ssiTag));
+		ESP_ERROR_CHECK_WITHOUT_ABORT(httpd_resp_sendstr_chunk(req, "SSI Page tag not found "));
+		ESP_ERROR_CHECK_WITHOUT_ABORT(httpd_resp_sendstr_chunk(req, ssiTag));
 
 	}
 

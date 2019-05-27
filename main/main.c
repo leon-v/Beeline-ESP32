@@ -23,6 +23,7 @@
 #include "wake_timer.h"
 #include "elastic.h"
 #include "radio.h"
+#include "display.h"
 
 void app_main() {
 
@@ -103,6 +104,8 @@ void app_main() {
 	elasticInit();
 
 	radioInit();
+
+	displayInit();
 
 	/*
     * Call Init on components

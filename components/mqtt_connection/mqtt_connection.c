@@ -120,7 +120,7 @@ static esp_err_t mqttConnectionEventHandler(esp_mqtt_event_handle_t event){
         		break;
         	}
 
-        	message_t message;
+        	static message_t message;
 
         	strcpy(message.deviceName, subTopics[0]);
         	strcpy(message.sensorName, subTopics[1]);
@@ -244,12 +244,10 @@ static void task(void * arg) {
 
     	while (componentReadyWait(component.name) == ESP_OK) {
 
-    		message_t message;
+    		static message_t message;
     		if (componentMessageRecieve(&component, &message) != ESP_OK) {
     			continue;
     		}
-
-    		ESP_LOGW(component.name, "Got messsage from %s", message.sensorName);
 
     		char * topic = mqttConnectionTopicFromMessage(&message);
     		char * value = mqttConnectionValueFromMessage(&message);

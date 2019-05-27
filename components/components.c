@@ -63,9 +63,11 @@ void componentsInit(void){
 
 		component_t * pComponent = components[i];
 
+		// Setup event group
 		pComponent->eventGroup = xEventGroupCreate();
 
-		componentSetNotReady(pComponent);
+		xEventGroupClearBits(pComponent->eventGroup, COMPONENT_READY);
+		xEventGroupSetBits(pComponent->eventGroup, COMPONENT_NOT_READY);
 
 		if ( (pComponent->queueItemLength) && (pComponent->queueLength) ) {
 			pComponent->queue = xQueueCreate(pComponent->queueLength, pComponent->queueItemLength);
@@ -112,45 +114,6 @@ component_t * componentsGet(const char * name) {
 
 	return NULL;
 }
-
-esp_err_t componentReadyWait(const char * name){
-
-	component_t * pComponent = componentsGet(name);
-
-	if (!pComponent){
-		return ESP_FAIL;
-	}
-
-	EventBits_t eventBits = xEventGroupWaitBits(pComponent->eventGroup, COMPONENT_READY, false, true, 60000 / portTICK_RATE_MS);
-
-	if (!(eventBits & COMPONENT_READY)) {
-		return ESP_FAIL;
-	}
-
-	ESP_LOGI(pComponent->name, " ready");
-
-	return ESP_OK;
-}
-
-esp_err_t componentNotReadyWait(const char * name){
-
-	component_t * pComponent = componentsGet(name);
-
-	if (!pComponent){
-		return ESP_FAIL;
-	}
-
-	EventBits_t eventBits = xEventGroupWaitBits(pComponent->eventGroup, COMPONENT_NOT_READY, false, true, 60000 / portTICK_RATE_MS);
-
-	if (!(eventBits & COMPONENT_NOT_READY)) {
-		return ESP_FAIL;
-	}
-
-	ESP_LOGW(pComponent->name, " not ready");
-
-	return ESP_OK;
-}
-
 
 esp_err_t componentsQueueSend(component_t * pComponent, void * buffer) {
 
@@ -202,19 +165,74 @@ esp_err_t componentQueueRecieve(component_t * pComponent, const char * name, voi
 	return ESP_OK;
 }
 
+esp_err_t componentReadyWait(const char * name){
+
+	component_t * pComponent = componentsGet(name);
+
+	if (!pComponent){
+		return ESP_FAIL;
+	}
+
+	EventBits_t eventBits = xEventGroupWaitBits(pComponent->eventGroup, COMPONENT_READY, false, true, 60000 / portTICK_RATE_MS);
+
+	if (!(eventBits & COMPONENT_READY)) {
+		return ESP_FAIL;
+	}
+
+	return ESP_OK;
+}
+
+esp_err_t componentNotReadyWait(const char * name){
+
+	component_t * pComponent = componentsGet(name);
+
+	if (!pComponent){
+		return ESP_FAIL;
+	}
+
+	EventBits_t eventBits = xEventGroupWaitBits(pComponent->eventGroup, COMPONENT_NOT_READY, false, true, 60000 / portTICK_RATE_MS);
+
+	if (!(eventBits & COMPONENT_NOT_READY)) {
+		return ESP_FAIL;
+	}
+
+	return ESP_OK;
+}
 
 void componentSetReady(component_t * pComponent) {
 
+	EventBits_t eventBits = xEventGroupGetBits(pComponent->eventGroup);
+
+	if (eventBits & COMPONENT_READY) {
+		return;
+	}
+
+	if (!(eventBits & COMPONENT_NOT_READY)) {
+		return;
+	}
+
 	xEventGroupSetBits(pComponent->eventGroup, COMPONENT_READY);
 	xEventGroupClearBits(pComponent->eventGroup, COMPONENT_NOT_READY);
-	ESP_LOGW(pComponent->name, " is ready.");
+
+	ESP_LOGI(pComponent->name, " changed from not ready to ready.");
 }
 
 void componentSetNotReady(component_t * pComponent) {
 
+	EventBits_t eventBits = xEventGroupGetBits(pComponent->eventGroup);
+
+	if (!(eventBits & COMPONENT_READY)) {
+		return;
+	}
+
+	if (eventBits & COMPONENT_NOT_READY) {
+		return;
+	}
+
 	xEventGroupClearBits(pComponent->eventGroup, COMPONENT_READY);
 	xEventGroupSetBits(pComponent->eventGroup, COMPONENT_NOT_READY);
-	ESP_LOGW(pComponent->name, " not ready.");
+
+	ESP_LOGI(pComponent->name, " changed from ready to not ready.");
 }
 
 void componentsGetHTML(httpd_req_t *req, char * ssiTag){
@@ -337,7 +355,7 @@ void componentsGetHTML(httpd_req_t *req, char * ssiTag){
 
 char * componentsGetNVSString(nvs_handle nvsHandle, char * string, const char * key, const char * def) {
 
-	size_t length = 512;
+	size_t length = CONFIG_HTTP_NVS_MAX_STRING_LENGTH;
 
 	esp_err_t espError = nvs_get_str(nvsHandle, key, NULL, &length);
 
@@ -354,7 +372,7 @@ char * componentsGetNVSString(nvs_handle nvsHandle, char * string, const char * 
 
 	else if (espError != ESP_OK){
 		ESP_ERROR_CHECK_WITHOUT_ABORT(espError);
-		return NULL;
+		return string;
 	}
 
 	string = (string == NULL) ? malloc(length) : realloc(string, length);
@@ -395,8 +413,63 @@ void componentsSetNVSu32(nvs_handle nvsHandle, const char * key, uint32_t value)
 	ESP_ERROR_CHECK(nvs_set_u32 (nvsHandle, key, value));
 }
 
+void componentLogMessage(component_t * pComponent, message_t * pMessage, const char * prefix) {
+
+	char * deviceName = pMessage->deviceName ? pMessage->deviceName : "ERROR";
+	char * sensorName = pMessage->sensorName ? pMessage->sensorName : "ERROR";
+
+	switch (pMessage->valueType){
+
+		case MESSAGE_INT:
+			ESP_LOGI(pComponent->name, "%s %s/%s/int/%d",
+				prefix,
+				deviceName,
+				sensorName,
+				pMessage->intValue
+			);
+		break;
+
+		case MESSAGE_FLOAT:
+			ESP_LOGI(pComponent->name, "%s %s/%s/float/%.4f",
+				prefix,
+				deviceName,
+				sensorName,
+				pMessage->floatValue
+			);
+		break;
+
+		case MESSAGE_DOUBLE:
+			ESP_LOGI(pComponent->name, "%s %s/%s/double/%.8f",
+				prefix,
+				deviceName,
+				sensorName,
+				pMessage->doubleValue
+			);
+		break;
+
+		case MESSAGE_STRING:
+			ESP_LOGI(pComponent->name, "%s %s/%s/string/%s",
+				prefix,
+				deviceName,
+				sensorName,
+				pMessage->stringValue
+			);
+		break;
+
+		default:
+			ESP_LOGI(pComponent->name, "%s %s/%s: Type %d unhandeled",
+				prefix,
+				deviceName,
+				sensorName,
+				pMessage->valueType
+			);
+		break;
+	}
+}
 
 void componentSendMessage(component_t * pComponentFrom, message_t * pMessage) {
+
+	componentLogMessage(pComponentFrom, pMessage, "Forwarding ");
 
 	nvs_handle nvsHandle;
 	uint64_t routeBits = 0;
@@ -421,6 +494,8 @@ void componentSendMessage(component_t * pComponentFrom, message_t * pMessage) {
 			ESP_LOGE(pComponentTo->name, "No room in message queue for %s", pComponentFrom->name);
 			continue;
 		}
+
+		componentLogMessage(pComponentTo, pMessage, "Got ");
 
 		xQueueSend(pComponentTo->messageQueue, pMessage, 0);
 	}

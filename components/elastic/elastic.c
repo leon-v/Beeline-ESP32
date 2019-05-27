@@ -135,7 +135,7 @@ static void task(void * arg) {
 			continue;
 		}
 
-		message_t message;
+		static message_t message;
     	if (componentMessageRecieve(&component, &message) != ESP_OK) {
     		continue;
     	}

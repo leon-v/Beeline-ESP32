@@ -33,6 +33,7 @@ typedef struct {
 	httpPage_t * configPage;
 } component_t;
 
+
 enum messageType_t {
 	MESSAGE_INT,
 	MESSAGE_FLOAT,
@@ -79,6 +80,8 @@ void componentSendMessage(component_t * pComponentFrom, message_t * pMessage);
 esp_err_t componentMessageRecieve(component_t * pComponent, message_t * pMessage);
 
 void componentsLoadNVS(component_t * pComponent);
+
+void componentLogMessage(component_t * pComponent, message_t * pMessage, const char * prefix);
 
 #define member_size(type, member) sizeof(((type *)0)->member)
 
