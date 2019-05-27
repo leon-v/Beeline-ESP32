@@ -18,13 +18,14 @@ body .left{
 	width:33%;
 	float:left;
 	height:100%;
-	border-right: 1px solid #ede5ff;
 }
 body > .left iframe{
 	height:90%;
 	width:100%;
 	border:0;
 	max-width: 280px;
+	position: fixed;
+    top: 0px;
 }
 body > .right{
 	width: 66%;
@@ -32,6 +33,7 @@ body > .right{
 	max-width: 800px;
 	padding-left: 20px;
 	margin-top: 59px;
+	border-left: 1px solid #ede5ff;
 }
 
 textarea, input, select, button{

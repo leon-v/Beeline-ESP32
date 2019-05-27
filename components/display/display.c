@@ -29,9 +29,10 @@ static void loadNVS(nvs_handle nvsHandle){
 
 	template = componentsGetNVSString(nvsHandle, template, "template", "Battery: [Devicename:Battery]");
 
+	ESP_LOGI(component.name, "Loaded %s", template);
 	messagesLength = 0;
 
-	char tempTemplate[CONFIG_HTTP_NVS_MAX_STRING_LENGTH];
+	static char tempTemplate[CONFIG_HTTP_NVS_MAX_STRING_LENGTH];
 
 	strcpy(tempTemplate, template);
 
@@ -115,7 +116,7 @@ static void displayUpdate(void){
 	char * token;
 	token = strtok(tempTemplate, "[");
 
-	char display[CONFIG_HTTP_NVS_MAX_STRING_LENGTH] = {0};
+	static char display[CONFIG_HTTP_NVS_MAX_STRING_LENGTH] = {0};
 
 	while (token != NULL){
 
@@ -180,9 +181,13 @@ static void updateVariable(message_t * message){
 
 static void task(void * arg) {
 
+	ssd1306Init();
+
+	componentSetReady(&component);
+
 	while (1) {
 
-		message_t message;
+		static message_t message;
 		if (componentMessageRecieve(&component, &message) != ESP_OK) {
 			continue;
 		}
@@ -201,5 +206,5 @@ void displayInit(void){
 	component.loadNVS			= &loadNVS;
 	component.saveNVS			= &saveNVS;
 
-	// componentsAdd(&component);
+	componentsAdd(&component);
 }

@@ -24,7 +24,7 @@ static void loadNVS(nvs_handle nvsHandle){
 void deviceInit(void) {
 
 	// Set device unique ID
-    nvs_handle nvsHandle;
+    static nvs_handle nvsHandle;
 	ESP_ERROR_CHECK(nvs_open(component.name, NVS_READWRITE, &nvsHandle));
 
 	size_t nvsLength;

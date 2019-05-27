@@ -38,8 +38,8 @@ static void task(void *arg){
 	}
 
 
-    time_t now = 0;
-    struct tm timeinfo = { 0 };
+    static time_t now = 0;
+    static struct tm timeinfo = { 0 };
     while(timeinfo.tm_year < (2016 - 1900)) {
 
     	ESP_LOGI(component.name, "Waiting for time to get updated from %s", host);

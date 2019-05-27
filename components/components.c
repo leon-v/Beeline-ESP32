@@ -4,7 +4,7 @@
 #define TAG "Components"
 
 unsigned char componentsLength = 0;
-component_t * components[10];
+component_t * components[16];
 
 void componentsAdd(component_t * pComponent){
 
@@ -93,7 +93,7 @@ void componentsStart(void){
 		component_t * pComponent = components[i];
 
 		if (pComponent->task != NULL){
-			xTaskCreate(pComponent->task, pComponent->name, 2048, NULL, 10 + pComponent->priority, NULL);
+			xTaskCreate(pComponent->task, pComponent->name, 2048, NULL, 5 + pComponent->priority, NULL);
 		}
 
 	}
@@ -214,7 +214,7 @@ void componentSetReady(component_t * pComponent) {
 	xEventGroupSetBits(pComponent->eventGroup, COMPONENT_READY);
 	xEventGroupClearBits(pComponent->eventGroup, COMPONENT_NOT_READY);
 
-	ESP_LOGI(pComponent->name, " changed from not ready to ready.");
+	ESP_LOGI(pComponent->name, "Changed from not ready to ready.");
 }
 
 void componentSetNotReady(component_t * pComponent) {
@@ -232,7 +232,7 @@ void componentSetNotReady(component_t * pComponent) {
 	xEventGroupClearBits(pComponent->eventGroup, COMPONENT_READY);
 	xEventGroupSetBits(pComponent->eventGroup, COMPONENT_NOT_READY);
 
-	ESP_LOGI(pComponent->name, " changed from ready to not ready.");
+	ESP_LOGI(pComponent->name, "Changed from ready to not ready.");
 }
 
 void componentsGetHTML(httpd_req_t *req, char * ssiTag){
