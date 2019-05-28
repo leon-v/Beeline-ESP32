@@ -63,17 +63,20 @@ static esp_err_t ssd1306ModuleInit() {
 	i2c_master_write_byte(cmd, OLED_I2C_ADDRESS | I2C_MASTER_WRITE, true);
 	i2c_master_write_byte(cmd, OLED_CONTROL_BYTE_CMD_STREAM, true);
 
-	// i2c_master_write_byte(cmd, OLED_CMD_SET_MUX_RATIO, true);
-	// i2c_master_write_byte(cmd, 0x3F, true);
+	i2c_master_write_byte(cmd, OLED_CMD_SET_CHARGE_PUMP, true);
+	i2c_master_write_byte(cmd, 0x14, true);
 
-	// i2c_master_write_byte(cmd, OLED_CMD_SET_DISPLAY_OFFSET, true);
-	// i2c_master_write_byte(cmd, 0x00, true);
+	i2c_master_write_byte(cmd, OLED_CMD_SET_MUX_RATIO, true);
+	i2c_master_write_byte(cmd, 0x3F, true);
+
+	i2c_master_write_byte(cmd, OLED_CMD_SET_DISPLAY_OFFSET, true);
+	i2c_master_write_byte(cmd, 0x00, true);
 
 	// i2c_master_write_byte(cmd, OLED_CMD_SET_DISPLAY_START_LINE | 0x00, true);
 
-	i2c_master_write_byte(cmd, OLED_CMD_SET_SEGMENT_REMAP | 0x00, true);
+	i2c_master_write_byte(cmd, OLED_CMD_SET_SEGMENT_REMAP | 0x01, true);
 
-	i2c_master_write_byte(cmd, OLED_CMD_SET_COM_SCAN_MODE | 0x00, true);
+	i2c_master_write_byte(cmd, OLED_CMD_SET_COM_SCAN_MODE | 0x08, true);
 
 	// i2c_master_write_byte(cmd, OLED_CMD_SET_COM_PIN_MAP, true);
 	// i2c_master_write_byte(cmd, 0x12, true);
@@ -81,15 +84,21 @@ static esp_err_t ssd1306ModuleInit() {
 	// i2c_master_write_byte(cmd, OLED_CMD_SET_CONTRAST, true);
 	// i2c_master_write_byte(cmd, 0x7F, true);
 
-	// i2c_master_write_byte(cmd, OLED_CMD_DISPLAY_RAM | 0x01, true);
+	i2c_master_write_byte(cmd, OLED_CMD_DISPLAY_RAM | 0x00, true);
+
+	i2c_master_write_byte(cmd, OLED_CMD_SET_MEMORY_ADDR_MODE, true);
+	i2c_master_write_byte(cmd, 0x02, true);
+
+	i2c_master_write_byte(cmd, OLED_CMD_SET_PAGE_RANGE, true);
+	i2c_master_write_byte(cmd, 0x00, true);
+	i2c_master_write_byte(cmd, 0x07, true);
+
+
 
 	// i2c_master_write_byte(cmd, OLED_CMD_DISPLAY_NORMAL, true);
 
 	// i2c_master_write_byte(cmd, OLED_CMD_SET_DISPLAY_CLK_DIV, true);
 	// i2c_master_write_byte(cmd, 0x80, true);
-
-	i2c_master_write_byte(cmd, OLED_CMD_SET_CHARGE_PUMP, true);
-	i2c_master_write_byte(cmd, 0x14, true);
 
 	i2c_master_write_byte(cmd, OLED_CMD_DISPLAY_ON, true);
 
@@ -114,7 +123,7 @@ void ssd1306CLS(void) {
 
 	i2c_cmd_handle_t cmd;
 
-	uint8_t zero[128] = {0};
+	uint8_t zero[256] = {0};
 
 	for (uint8_t i = 0; i < 8; i++) {
 		cmd = i2c_cmd_link_create();
