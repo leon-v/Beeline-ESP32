@@ -1,14 +1,15 @@
 #ifndef MAIN_SSD1366_H_
 #define MAIN_SSD1366_H_
 
-void ssd1306Init(void);
+esp_err_t ssd1306Init(void);
 void ssd1306SetText(char * text);
+void ssd1306CLS(void);
 
 // Following definitions are bollowed from
 // http://robotcantalk.blogspot.com/2015/03/interfacing-arduino-with-ssd1306-driven.html
 
-// SLA (0x3C) + WRITE_MODE (0x00) =  0x78 (0b01111000)
-#define OLED_I2C_ADDRESS   0x3C
+// SLA (0x78) + WRITE_MODE (0x00) =  0x78 (0b01111000)
+#define OLED_I2C_ADDRESS   0x78
 
 // Control byte
 #define OLED_CONTROL_BYTE_CMD_SINGLE    0x80
@@ -31,9 +32,9 @@ void ssd1306SetText(char * text);
 
 // Hardware Config (pg.31)
 #define OLED_CMD_SET_DISPLAY_START_LINE 0x40
-#define OLED_CMD_SET_SEGMENT_REMAP      0xA1
+#define OLED_CMD_SET_SEGMENT_REMAP      0xA0
 #define OLED_CMD_SET_MUX_RATIO          0xA8    // follow with 0x3F = 64 MUX
-#define OLED_CMD_SET_COM_SCAN_MODE      0xC8
+#define OLED_CMD_SET_COM_SCAN_MODE      0xC0
 #define OLED_CMD_SET_DISPLAY_OFFSET     0xD3    // follow with 0x00
 #define OLED_CMD_SET_COM_PIN_MAP        0xDA    // follow with 0x12
 #define OLED_CMD_NOP                    0xE3    // NOP
@@ -45,5 +46,9 @@ void ssd1306SetText(char * text);
 
 // Charge Pump (pg.62)
 #define OLED_CMD_SET_CHARGE_PUMP        0x8D    // follow with 0x14
+
+#define OLED_CMD_SET_COLUMN_LOW			0x00
+#define OLED_CMD_SET_COLUMN_HIGH		0x10
+#define OLED_CMD_SET_PAGE				0xB0
 
 #endif /* MAIN_SSD1366_H_ */

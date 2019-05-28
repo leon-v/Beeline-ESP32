@@ -18,8 +18,9 @@ static const httpPage_t configPage = {
 
 static char * template;
 
+#define DISAPLY_MAX_MESSGES 16
 static int messagesLength;
-static message_t messages[16];
+static message_t messages[DISAPLY_MAX_MESSGES];
 
 static void saveNVS(nvs_handle nvsHandle){
 	componentsSetNVSString(nvsHandle, template, "template");
@@ -37,16 +38,18 @@ static void loadNVS(nvs_handle nvsHandle){
 	strcpy(tempTemplate, template);
 
 	char * token;
+	char * device;
+	char * sensor;
+
 	token = strtok(tempTemplate, "[");
 
-	while (token != NULL){
+	while (token){
 
-		char * device;
 		device = strtok(NULL, ":]");
 
-		char * sensor;
 		sensor = strtok(NULL, "]");
 
+		// No sensor name found, use device name
 		if (!sensor){
 			sensor = device;
 			device = deviceGetUniqueName();
@@ -54,7 +57,7 @@ static void loadNVS(nvs_handle nvsHandle){
 
 		if (sensor){
 
-			if (messagesLength >= sizeof(messages)) {
+			if (messagesLength >= DISAPLY_MAX_MESSGES) {
 				ESP_LOGE(component.name, "No room left in display value message buffer");
 			}
 
@@ -63,6 +66,8 @@ static void loadNVS(nvs_handle nvsHandle){
 
 				strcpy(message->deviceName, device);
 				strcpy(message->sensorName, sensor);
+
+				// pre set a default value
 				message->valueType = MESSAGE_STRING;
 				strcpy(message->stringValue, "???");
 
@@ -181,7 +186,13 @@ static void updateVariable(message_t * message){
 
 static void task(void * arg) {
 
-	ssd1306Init();
+	esp_err_t espError = ssd1306Init();
+
+	if (espError != ESP_OK){
+		componentsRemove(component.name);
+		vTaskDelete(NULL);
+		return;
+	}
 
 	componentSetReady(&component);
 

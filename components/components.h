@@ -53,6 +53,7 @@ typedef struct{
 } message_t;
 
 void componentsAdd(component_t * component);
+void componentsRemove(const char * name);
 
 void componentsInit(void);
 void componentsStart(void);

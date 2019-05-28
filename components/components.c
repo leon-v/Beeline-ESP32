@@ -6,6 +6,30 @@
 unsigned char componentsLength = 0;
 component_t * components[16];
 
+void componentsRemove(const char * name) {
+
+	unsigned char shuffle = 0;
+	for (unsigned char i=0; i < componentsLength; i++) {
+
+		if (shuffle){
+			components[i - 1] = components[i];
+		}
+
+		else{
+			component_t * pComponent = components[i];
+
+			if (strcmp(pComponent->name, name) == 0) {
+				shuffle = 1;
+			}
+		}
+	}
+
+	if (shuffle){
+		componentsLength--;
+	}
+
+	ESP_LOGW(name, "Removed");
+}
 void componentsAdd(component_t * pComponent){
 
 	components[componentsLength] = pComponent;
