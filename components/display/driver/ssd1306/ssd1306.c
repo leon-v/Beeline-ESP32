@@ -20,7 +20,7 @@ Source code from https://github.com/yanbe/ssd1306-esp-idf-i2c
 
 #define TAG "SSD1306"
 
-#define I2C_TIMER 5
+#define I2C_TIMER 1
 
 static void ssd1306PinsInit() {
 
@@ -61,21 +61,25 @@ static esp_err_t ssd1306ModuleInit() {
 	i2c_master_start(cmd);
 
 	i2c_master_write_byte(cmd, OLED_I2C_ADDRESS | I2C_MASTER_WRITE, true);
-	i2c_master_write_byte(cmd, OLED_CONTROL_BYTE_CMD_STREAM, true);
 
+	i2c_master_write_byte(cmd, OLED_CONTROL_BYTE_CMD_STREAM, true);
 	i2c_master_write_byte(cmd, OLED_CMD_SET_CHARGE_PUMP, true);
 	i2c_master_write_byte(cmd, 0x14, true);
 
-	i2c_master_write_byte(cmd, OLED_CMD_SET_MUX_RATIO, true);
-	i2c_master_write_byte(cmd, 0x3F, true);
+	i2c_master_write_byte(cmd, OLED_CMD_DISPLAY_ON, true);
 
-	i2c_master_write_byte(cmd, OLED_CMD_SET_DISPLAY_OFFSET, true);
-	i2c_master_write_byte(cmd, 0x00, true);
+	// i2c_master_write_byte(cmd, OLED_CMD_SET_MUX_RATIO, true);
+	// i2c_master_write_byte(cmd, 0x3F, true);
+
+	// i2c_master_write_byte(cmd, OLED_CMD_SET_DISPLAY_OFFSET, true);
+	// i2c_master_write_byte(cmd, 0x00, true);
 
 	// i2c_master_write_byte(cmd, OLED_CMD_SET_DISPLAY_START_LINE | 0x00, true);
 
+	i2c_master_write_byte(cmd, OLED_CONTROL_BYTE_CMD_SINGLE, true);
 	i2c_master_write_byte(cmd, OLED_CMD_SET_SEGMENT_REMAP | 0x01, true);
 
+	i2c_master_write_byte(cmd, OLED_CONTROL_BYTE_CMD_SINGLE, true);
 	i2c_master_write_byte(cmd, OLED_CMD_SET_COM_SCAN_MODE | 0x08, true);
 
 	// i2c_master_write_byte(cmd, OLED_CMD_SET_COM_PIN_MAP, true);
@@ -84,23 +88,20 @@ static esp_err_t ssd1306ModuleInit() {
 	// i2c_master_write_byte(cmd, OLED_CMD_SET_CONTRAST, true);
 	// i2c_master_write_byte(cmd, 0x7F, true);
 
-	i2c_master_write_byte(cmd, OLED_CMD_DISPLAY_RAM | 0x00, true);
+	// i2c_master_write_byte(cmd, OLED_CMD_DISPLAY_RAM | 0x00, true);
 
-	i2c_master_write_byte(cmd, OLED_CMD_SET_MEMORY_ADDR_MODE, true);
-	i2c_master_write_byte(cmd, 0x02, true);
+	// i2c_master_write_byte(cmd, OLED_CMD_SET_MEMORY_ADDR_MODE, true);
+	// i2c_master_write_byte(cmd, 0x02, true);
 
-	i2c_master_write_byte(cmd, OLED_CMD_SET_PAGE_RANGE, true);
-	i2c_master_write_byte(cmd, 0x00, true);
-	i2c_master_write_byte(cmd, 0x07, true);
-
-
+	// i2c_master_write_byte(cmd, OLED_CMD_SET_PAGE_RANGE, true);
+	// i2c_master_write_byte(cmd, 0x00, true);
+	// i2c_master_write_byte(cmd, 0x07, true);
 
 	// i2c_master_write_byte(cmd, OLED_CMD_DISPLAY_NORMAL, true);
 
 	// i2c_master_write_byte(cmd, OLED_CMD_SET_DISPLAY_CLK_DIV, true);
 	// i2c_master_write_byte(cmd, 0x80, true);
 
-	i2c_master_write_byte(cmd, OLED_CMD_DISPLAY_ON, true);
 
 	i2c_master_stop(cmd);
 
@@ -123,17 +124,21 @@ void ssd1306CLS(void) {
 
 	i2c_cmd_handle_t cmd;
 
-	uint8_t zero[256] = {0};
+	uint8_t zero[128] = {0};
+	// memset(zero, 0xAA, 128);
 
 	for (uint8_t i = 0; i < 8; i++) {
 		cmd = i2c_cmd_link_create();
 		i2c_master_start(cmd);
 		i2c_master_write_byte(cmd, OLED_I2C_ADDRESS | I2C_MASTER_WRITE, true);
+
 		i2c_master_write_byte(cmd, OLED_CONTROL_BYTE_CMD_SINGLE, true);
 		i2c_master_write_byte(cmd, OLED_CMD_SET_PAGE | i, true);
+		i2c_master_write_byte(cmd, OLED_CMD_SET_COLUMN_LOW	| 0x00, true); // reset column
+		i2c_master_write_byte(cmd, OLED_CMD_SET_COLUMN_HIGH | 0x00, true);
 
 		i2c_master_write_byte(cmd, OLED_CONTROL_BYTE_DATA_STREAM, true);
-		i2c_master_write(cmd, zero, sizeof(zero), true);
+		i2c_master_write(cmd, zero, 128, true);
 		i2c_master_stop(cmd);
 		i2c_master_cmd_begin(I2C_NUM_0, cmd, I2C_TIMER);
 		i2c_cmd_link_delete(cmd);
@@ -165,10 +170,10 @@ static void ssd1306SetTextLine(uint8_t cur_page) {
 	i2c_master_start(cmd);
 	i2c_master_write_byte(cmd, OLED_I2C_ADDRESS | I2C_MASTER_WRITE, true);
 
-	i2c_master_write_byte(cmd, OLED_CONTROL_BYTE_CMD_STREAM, true);
+	i2c_master_write_byte(cmd, OLED_CONTROL_BYTE_CMD_SINGLE, true);
+	i2c_master_write_byte(cmd, OLED_CMD_SET_PAGE | cur_page, true);
 	i2c_master_write_byte(cmd, OLED_CMD_SET_COLUMN_LOW	| 0x00, true); // reset column
 	i2c_master_write_byte(cmd, OLED_CMD_SET_COLUMN_HIGH | 0x00, true);
-	i2c_master_write_byte(cmd, OLED_CMD_SET_PAGE		| cur_page, true); // reset page
 
 	i2c_master_stop(cmd);
 	i2c_master_cmd_begin(I2C_NUM_0, cmd, I2C_TIMER);
@@ -179,8 +184,11 @@ static void ssd1306SetTextLine(uint8_t cur_page) {
 void ssd1306SetText(char * text) {
 
 	uint8_t i;
-	uint8_t line = 0;
-	uint8_t newline = 0;
+	static uint8_t line;
+	static uint8_t newline;
+
+	line = 0;
+	newline = 0;
 
 	ssd1306CLS();
 

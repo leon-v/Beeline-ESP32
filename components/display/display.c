@@ -121,7 +121,8 @@ static void displayUpdate(void){
 	char * token;
 	token = strtok(tempTemplate, "[");
 
-	static char display[CONFIG_HTTP_NVS_MAX_STRING_LENGTH] = {0};
+	static char display[CONFIG_HTTP_NVS_MAX_STRING_LENGTH];
+	strcpy(display, "");
 
 	while (token != NULL){
 

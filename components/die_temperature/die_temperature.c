@@ -57,7 +57,7 @@ static void task(void * arg) {
 		}
 
 
-		if (count++ < timerCount) {
+		if (++count < timerCount) {
 			continue;
 		}
 

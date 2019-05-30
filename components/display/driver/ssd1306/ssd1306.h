@@ -50,5 +50,6 @@ void ssd1306CLS(void);
 #define OLED_CMD_SET_COLUMN_LOW			0x00
 #define OLED_CMD_SET_COLUMN_HIGH		0x10
 #define OLED_CMD_SET_PAGE				0xB0
+#define OLED_CMD_DEACTIVATE_SCROLL		0x2E
 
 #endif /* MAIN_SSD1366_H_ */
