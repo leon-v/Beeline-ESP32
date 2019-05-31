@@ -211,7 +211,7 @@ static void radioCreateMessage(message_t * message, unsigned char * radioBuffer,
 		break;
 
 		case MESSAGE_STRING:
-			length = strlen((char *) bytes);
+			length = strlen((char *) bytes) + 1;
 			memcpy(message->stringValue, bytes, length);
 			bytes+= length + 1;
 		break;

@@ -199,14 +199,14 @@ static void task(void * arg) {
 
 	while (1) {
 
+		displayUpdate();
+
 		static message_t message;
 		if (componentMessageRecieve(&component, &message) != ESP_OK) {
 			continue;
 		}
 
 		updateVariable(&message);
-
-		displayUpdate();
 	}
 }
 

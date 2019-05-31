@@ -139,15 +139,16 @@ void ssd1306ClearLine(uint8_t line, uint8_t length) {
 	ESP_ERROR_CHECK_WITHOUT_ABORT(i2c_master_cmd_begin(I2C_NUM_0, cmd, I2C_TIMER));
 	i2c_cmd_link_delete(cmd);
 }
-void ssd1306ClearScreen(void) {
 
-	i2c_cmd_handle_t cmd;
+void ssd1306ClearScreen() {
 
 	for (uint8_t i = 0; i < 8; i++) {
 
-		cmd = i2c_cmd_link_create();
-		ESP_ERROR_CHECK_WITHOUT_ABORT(i2c_master_start(cmd));
+		i2c_cmd_handle_t cmd;
 
+		cmd = i2c_cmd_link_create();
+
+		ESP_ERROR_CHECK_WITHOUT_ABORT(i2c_master_start(cmd));
 		ESP_ERROR_CHECK_WITHOUT_ABORT(i2c_master_write_byte(cmd, OLED_I2C_WRITE, true));
 
 		ESP_ERROR_CHECK_WITHOUT_ABORT(i2c_master_write_byte(cmd, OLED_CONTROL_BYTE_CMD_SINGLE, true));
@@ -169,54 +170,12 @@ void ssd1306ClearScreen(void) {
 }
 
 
-// static void ssd1306PutCharacter(uint8_t character) {
-
-// 	i2c_cmd_handle_t cmd;
-
-// 	cmd = i2c_cmd_link_create();
-// 	i2c_master_start(cmd);
-// 	i2c_master_write_byte(cmd, OLED_I2C_WRITE, true);
-
-// 	i2c_master_write_byte(cmd, OLED_CONTROL_BYTE_DATA_STREAM, true);
-// 	i2c_master_write(cmd, font[character], FONT_WIDTH, true);
-
-// 	i2c_master_stop(cmd);
-// 	i2c_master_cmd_begin(I2C_NUM_0, cmd, I2C_TIMER);
-// 	i2c_cmd_link_delete(cmd);
-// }
-
-// static void ssd1306SetTextLine(uint8_t cur_page) {
-
-// 	i2c_cmd_handle_t cmd;
-
-// 	cmd = i2c_cmd_link_create();
-// 	i2c_master_start(cmd);
-// 	i2c_master_write_byte(cmd, OLED_I2C_WRITE, true);
-
-// 	i2c_master_write_byte(cmd, OLED_CONTROL_BYTE_CMD_SINGLE, true);
-// 	i2c_master_write_byte(cmd, OLED_CMD_SET_PAGE | cur_page, true);
-
-// 	i2c_master_write_byte(cmd, OLED_CONTROL_BYTE_CMD_SINGLE, true);
-// 	i2c_master_write_byte(cmd, OLED_CMD_SET_COLUMN_LOW	| 0x00, true); // reset column
-
-// 	i2c_master_write_byte(cmd, OLED_CONTROL_BYTE_CMD_SINGLE, true);
-// 	i2c_master_write_byte(cmd, OLED_CMD_SET_COLUMN_HIGH | 0x00, true);
-
-// 	i2c_master_stop(cmd);
-// 	i2c_master_cmd_begin(I2C_NUM_0, cmd, I2C_TIMER);
-// 	i2c_cmd_link_delete(cmd);
-// }
-
 void ssd1306SetPage(i2c_cmd_handle_t cmd, uint8_t page) {
-
-	ESP_LOGW(TAG, "ssd1306SetPage %d", page);
 
 	i2c_master_write_byte(cmd, OLED_CONTROL_BYTE_CMD_SINGLE, true);
 	i2c_master_write_byte(cmd, OLED_CMD_SET_PAGE | page, true);
 }
 void ssd1306SetColumn(i2c_cmd_handle_t cmd, uint8_t column) {
-
-	ESP_LOGW(TAG, "ssd1306SetColumn %d", column);
 
 	i2c_master_write_byte(cmd, OLED_CONTROL_BYTE_CMD_SINGLE, true);
 	i2c_master_write_byte(cmd, OLED_CMD_SET_COLUMN_LOW	| ((column >> 0) & 0x0F), true);
@@ -227,32 +186,34 @@ void ssd1306SetColumn(i2c_cmd_handle_t cmd, uint8_t column) {
 
 void ssd1306SetPosition(i2c_cmd_handle_t cmd, uint8_t page, uint8_t column) {
 
-	ESP_LOGW(TAG, "ssd1306SetPosition %d:%d", page, column);
+	ESP_ERROR_CHECK_WITHOUT_ABORT(i2c_master_start(cmd));
+	ESP_ERROR_CHECK_WITHOUT_ABORT(i2c_master_write_byte(cmd, OLED_I2C_WRITE, true));
+	ESP_ERROR_CHECK_WITHOUT_ABORT(i2c_master_write_byte(cmd, OLED_CONTROL_BYTE_CMD_STREAM, true));
 
-	i2c_master_write_byte(cmd, OLED_CONTROL_BYTE_CMD_SINGLE, true);
-	i2c_master_write_byte(cmd, OLED_CMD_SET_PAGE | page, true);
-
-	i2c_master_write_byte(cmd, OLED_CONTROL_BYTE_CMD_SINGLE, true);
-	i2c_master_write_byte(cmd, OLED_CMD_SET_COLUMN_LOW	| ((column >> 0) & 0x0F), true);
-
-	i2c_master_write_byte(cmd, OLED_CONTROL_BYTE_CMD_SINGLE, true);
-	i2c_master_write_byte(cmd, OLED_CMD_SET_COLUMN_HIGH | ((column >> 4) & 0x0F), true);
+	ESP_ERROR_CHECK_WITHOUT_ABORT(i2c_master_write_byte(cmd, OLED_CMD_SET_PAGE			| page, true));
+	ESP_ERROR_CHECK_WITHOUT_ABORT(i2c_master_write_byte(cmd, OLED_CMD_SET_COLUMN_LOW	| ((column >> 0) & 0x0F), true));
+	ESP_ERROR_CHECK_WITHOUT_ABORT(i2c_master_write_byte(cmd, OLED_CMD_SET_COLUMN_HIGH	| ((column >> 4) & 0x0F), true));
 }
 
 void ssd1306SendString(i2c_cmd_handle_t cmd, char * string) {
 
-	ESP_LOGW(TAG, "ssd1306SendString %s", string);
-
 	uint8_t length = strlen(string);
+	uint8_t column = 0;
+
+	ESP_ERROR_CHECK_WITHOUT_ABORT(i2c_master_start(cmd));
+	ESP_ERROR_CHECK_WITHOUT_ABORT(i2c_master_write_byte(cmd, OLED_I2C_WRITE, true));
+	ESP_ERROR_CHECK_WITHOUT_ABORT(i2c_master_write_byte(cmd, OLED_CONTROL_BYTE_DATA_STREAM, true));
 
 	for (int i = 0; i < length; i++){
-
 		uint8_t character = (uint8_t) string[i];
-
-		i2c_master_write_byte(cmd, OLED_CONTROL_BYTE_DATA_STREAM, true);
-		i2c_master_write(cmd, font[character], FONT_WIDTH, true);
+		ESP_ERROR_CHECK_WITHOUT_ABORT(i2c_master_write(cmd, font[character], FONT_WIDTH, true));
+		column+= FONT_WIDTH;
 	}
 
+	while (column < 128) {
+		ESP_ERROR_CHECK_WITHOUT_ABORT(i2c_master_write(cmd, font[' '], FONT_WIDTH, true));
+		column+= FONT_WIDTH;
+	}
 }
 
 void ssd1306SetText(char * text) {
@@ -261,9 +222,6 @@ void ssd1306SetText(char * text) {
 	cmd = i2c_cmd_link_create();
 
 	uint8_t page = 0;
-	uint8_t column = 0;
-
-	// Reset
 
 	char * line;
 
@@ -271,83 +229,22 @@ void ssd1306SetText(char * text) {
 
 	while (line) {
 
-		// ssd1306SetPage(cmd, page);
-		// ssd1306SetColumn(cmd, 0);
-
-		ESP_ERROR_CHECK_WITHOUT_ABORT(i2c_master_start(cmd));
-		ESP_ERROR_CHECK_WITHOUT_ABORT(i2c_master_write_byte(cmd, OLED_I2C_WRITE, true));
-
-		ESP_ERROR_CHECK_WITHOUT_ABORT(i2c_master_write_byte(cmd, OLED_CONTROL_BYTE_CMD_SINGLE, true));
-		ESP_ERROR_CHECK_WITHOUT_ABORT(i2c_master_write_byte(cmd, OLED_CMD_SET_PAGE | page, true));
-
-		ESP_ERROR_CHECK_WITHOUT_ABORT(i2c_master_write_byte(cmd, OLED_CONTROL_BYTE_CMD_SINGLE, true));
-		ESP_ERROR_CHECK_WITHOUT_ABORT(i2c_master_write_byte(cmd, OLED_CMD_SET_COLUMN_LOW	| ((column >> 0) & 0x0F), true));
-
-		ESP_ERROR_CHECK_WITHOUT_ABORT(i2c_master_write_byte(cmd, OLED_CONTROL_BYTE_CMD_SINGLE, true));
-		ESP_ERROR_CHECK_WITHOUT_ABORT(i2c_master_write_byte(cmd, OLED_CMD_SET_COLUMN_HIGH | ((column >> 4) & 0x0F), true));
-
-		uint8_t length = strlen(line);
-
-		if (length > 0){
-
-			ESP_ERROR_CHECK_WITHOUT_ABORT(i2c_master_start(cmd));
-			ESP_ERROR_CHECK_WITHOUT_ABORT(i2c_master_write_byte(cmd, OLED_I2C_WRITE, true));
-
-			ESP_ERROR_CHECK_WITHOUT_ABORT(i2c_master_write_byte(cmd, OLED_CONTROL_BYTE_DATA_STREAM, true));
-
-			for (int i = 0; i < length; i++){
-				uint8_t character = (uint8_t) line[i];
-				ESP_ERROR_CHECK_WITHOUT_ABORT(i2c_master_write(cmd, font[character], FONT_WIDTH, true));
-			}
-		}
-
-		// ESP_LOGW(TAG, "%s", line);
+		ssd1306SetPosition(cmd, page, 0);
+		ssd1306SendString(cmd, line);
 
 		line = strtok(NULL, "\r\n");
+		page++;
+	}
+
+	while (page < 8) {
+		ssd1306SetPosition(cmd, page, 0);
+		ssd1306SendString(cmd, "");
 		page++;
 	}
 
 	ESP_ERROR_CHECK_WITHOUT_ABORT(i2c_master_stop(cmd));
 	ESP_ERROR_CHECK_WITHOUT_ABORT(i2c_master_cmd_begin(I2C_NUM_0, cmd, I2C_TIMER));
 	i2c_cmd_link_delete(cmd);
-
-	// uint8_t i;
-	// static uint8_t line;
-	// static uint8_t newline;
-
-	// line = 0;
-	// newline = 0;
-
-	// // char * line
-
-	// ssd1306ClearScreen();
-
-	// ssd1306SetTextLine(line);
-
-	// ESP_LOGW(TAG, "TEST Line %d", line);
-
-	// uint8_t text_len = strlen(text);
-
-	// for (i = 0; i < text_len; i++) {
-
-	// 	if (text[i] == '\r') {
-	// 		newline = 1;
-	// 		continue;
-	// 	}
-
-	// 	if (text[i] == '\n') {
-	// 		newline = 1;
-	// 		continue;
-	// 	}
-
-	// 	if (newline){
-	// 		line++;
-	// 		ssd1306SetTextLine(line);
-	// 		newline = 0;
-	// 	}
-
-	// 	ssd1306PutCharacter( (uint8_t) text[i]);
-	// }
 }
 
 
