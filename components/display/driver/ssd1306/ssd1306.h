@@ -9,7 +9,10 @@ void ssd1306CLS(void);
 // http://robotcantalk.blogspot.com/2015/03/interfacing-arduino-with-ssd1306-driven.html
 
 // SLA (0x78) + WRITE_MODE (0x00) =  0x78 (0b01111000)
-#define OLED_I2C_ADDRESS   0x78
+#define OLED_I2C_ADDRESS   0x3C
+#define OLED_I2C_WRITE		(OLED_I2C_ADDRESS << 1) | I2C_MASTER_WRITE
+#define OLED_I2C_READ		(OLED_I2C_ADDRESS << 1) | I2C_MASTER_READ
+
 
 // Control byte
 #define OLED_CONTROL_BYTE_CMD_SINGLE    0x80
