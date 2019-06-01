@@ -364,10 +364,14 @@ void sx1278SendPacket(uint8_t *buf, int size){
     * Start transmission and wait for conclusion.
     */
    sx1278WriteRegister(REG_OP_MODE, MODE_LONG_RANGE_MODE | MODE_TX);
-   while((sx1278ReadRegister(REG_IRQ_FLAGS) & IRQ_TX_DONE_MASK) == 0)
+
+   while((sx1278ReadRegister(REG_IRQ_FLAGS) & IRQ_TX_DONE_MASK) == 0) {
       vTaskDelay(2);
+   }
 
    sx1278WriteRegister(REG_IRQ_FLAGS, IRQ_TX_DONE_MASK);
+
+   vTaskDelay(10);
 }
 
 /**

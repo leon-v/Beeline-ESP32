@@ -208,6 +208,9 @@ void ssd1306SendString(i2c_cmd_handle_t cmd, char * string) {
 		uint8_t character = (uint8_t) string[i];
 		ESP_ERROR_CHECK_WITHOUT_ABORT(i2c_master_write(cmd, font[character], FONT_WIDTH, true));
 		column+= FONT_WIDTH;
+
+		ESP_ERROR_CHECK_WITHOUT_ABORT(i2c_master_write_byte(cmd, 0x00, true));
+		column++;
 	}
 
 	while (column < 128) {

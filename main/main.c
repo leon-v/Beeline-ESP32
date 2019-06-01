@@ -1,10 +1,10 @@
-/* Hello World Example
+/*
 
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
+W (70838) httpd_txrx: httpd_sock_err: error in send : 104
+ESP_EROR_CHECK failed: esp_err_t 0x8006 (ERROR) at 0x4008a258
+0x4008a258: _esp_error_check_failed at /mnt/c/Users/leonv/Documents/ESP32/esp-idf/components/esp32/panic.c:720
 
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
+file: "/mnt/c/Users/leonv/Documents/ESP32/components/http_server/http_server.c" line 250
 */
 
 // esp-idf includes
@@ -20,6 +20,7 @@
 #include "mqtt_connection.h"
 #include "datetime.h"
 #include "die_temperature.h"
+#include "die_hall.h"
 #include "wake_timer.h"
 #include "elastic.h"
 #include "radio.h"
@@ -98,6 +99,8 @@ void app_main() {
 	dateTimeInit();
 
 	dieTemperatureInit();
+
+	dieHallInit();
 
 	wakeTimerInit();
 
