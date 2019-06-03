@@ -117,6 +117,10 @@ void componentsStart(void){
 		component_t * pComponent = components[i];
 
 		if (pComponent->task != NULL){
+
+			if (!pComponent->tasStackDepth) {
+				pComponent->tasStackDepth = 2048;
+			}
 			xTaskCreate(pComponent->task, pComponent->name, 2048, NULL, 5 + pComponent->priority, NULL);
 		}
 

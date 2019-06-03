@@ -14,34 +14,32 @@ Source code from https://github.com/yanbe/ssd1306-esp-idf-i2c
 #include "ssd1306.h"
 #include "font.h"
 
-#define SDA_PIN GPIO_NUM_4
-#define SCL_PIN GPIO_NUM_15
-#define RST_PIN GPIO_NUM_16
-
 #define TAG "SSD1306"
 
 #define I2C_TIMER 500 / portTICK_RATE_MS
 
 static void ssd1306PinsInit() {
 
+	#if (CONFIG_SSD1306_RST_ENABLE == 'y')
 	gpio_config_t io_conf;
 
 	io_conf.intr_type = GPIO_PIN_INTR_DISABLE; //disable interrupt
 	io_conf.mode = GPIO_MODE_OUTPUT; //set as output mode
-	io_conf.pin_bit_mask = (1ULL << RST_PIN) ;//bit mask of the pins that you want to set,e.g.GPIO18/19
+	io_conf.pin_bit_mask = (1ULL << CONFIG_SSD1306_RST_PIN) ;//bit mask of the pins that you want to set,e.g.GPIO18/19
 	io_conf.pull_down_en = 0; //disable pull-down mode
 	io_conf.pull_up_en = 1;//enable pull-up mode
 	gpio_config(&io_conf);//configure GPIO with the given settings
 
-
 	//This pin is reset signal input. When the pin is pulled LOW, initialization of the chip is
 	//executed. Keep this pin HIGH (i.e. connect to VDD) during normal operation.
-	gpio_set_level(RST_PIN, 1);
+	gpio_set_level(CONFIG_SSD1306_RST_PIN, 1);
+
+	#endif
 
 	i2c_config_t i2c_config = {
 		.mode = I2C_MODE_MASTER,
-		.sda_io_num = SDA_PIN,
-		.scl_io_num = SCL_PIN,
+		.sda_io_num = CONFIG_SSD1306_SDA_PIN,
+		.scl_io_num = CONFIG_SSD1306_SCL_PIN,
 		.sda_pullup_en = GPIO_PULLUP_ENABLE,
 		.scl_pullup_en = GPIO_PULLUP_ENABLE,
 		.master.clk_speed = 1000000

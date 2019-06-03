@@ -5,8 +5,9 @@
 #include "ssd1306.h"
 
 static component_t component = {
-	.name = "Display",
-	.messagesIn = 1
+	.name			= "Display",
+	.messagesIn		= 1,
+	.messagesOut	= 0,
 };
 
 static const char config_html_start[] asm("_binary_display_config_html_start");
@@ -101,7 +102,7 @@ static void displayGetMessageValue(char * device, char * sensor, char * value) {
 					break;
 
 					case MESSAGE_DOUBLE:
-						sprintf(value, "%.4f", displayMessage->floatValue);
+						sprintf(value, "%.4f", displayMessage->doubleValue);
 					break;
 
 					case MESSAGE_STRING:
@@ -121,7 +122,7 @@ static void displayUpdate(void){
 	char * token;
 	token = strtok(tempTemplate, "[");
 
-	static char display[CONFIG_HTTP_NVS_MAX_STRING_LENGTH];
+	char display[CONFIG_HTTP_NVS_MAX_STRING_LENGTH];
 	strcpy(display, "");
 
 	while (token != NULL){
@@ -213,8 +214,9 @@ static void task(void * arg) {
 
 void displayInit(void){
 
-	component.configPage		= &configPage;
+	// component.configPage		= &configPage;
 	component.task				= &task;
+	component.tasStackDepth		= 4096;
 	component.loadNVS			= &loadNVS;
 	component.saveNVS			= &saveNVS;
 

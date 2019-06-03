@@ -1,0 +1,17 @@
+menu "HCSR04"
+
+config HCSR04_TRIG_PIN
+    int "Trigger GPIO Pin Number"
+    range 0 39
+    default 13
+    help
+	The GPIO pin on the ESP32 that will be connected to the HCSR04 Trig pin. Must be output capable.
+
+config HCSR04_ECHO_PIN
+    int "Echo GPIO Pin Number"
+    range 0 39
+    default 12
+    help
+	The GPIO pin on the ESP32 that will be connected to the HCSR04 Echo pin. Must be input and GPIO interrupt capable.
+
+endmenu

@@ -1,0 +1,45 @@
+<!--#page:template_top_html-->
+<h2>HCSR04</h2>
+<form action="" method="post">
+
+	<h3>Wake Timer Multiply</h3>
+	<div class="inputBlock">
+		<div class="input">
+			<input type="number" name="nvs:HCSR04:u32:timerCount" value="<!--#nvs:HCSR04:u32:timerCount-->" >
+		</div>
+		<p class="info">The amount of times the wake timer event fires before this event is fired.</p>
+	</div>
+
+	<h3>Max Samples</h3>
+	<div class="inputBlock">
+		<div class="input">
+			<input type="number" name="nvs:HCSR04:u32:samples" value="<!--#nvs:HCSR04:u32:samples-->" >
+		</div>
+		<p class="info">The amount of times the HCSR04 can be triggered to get the required samples.</p>
+	</div>
+
+	<h3>Required Samples</h3>
+	<div class="inputBlock">
+		<div class="input">
+			<input type="number" name="nvs:HCSR04:u32:required" value="<!--#nvs:HCSR04:u32:required-->" >
+		</div>
+		<p class="info">The amount of samples that are required, and will be averaged together.</p>
+	</div>
+
+	<h3>Ring Delay</h3>
+	<div class="inputBlock">
+		<div class="input">
+			<input type="number" name="nvs:HCSR04:u32:delay" value="<!--#nvs:HCSR04:u32:delay-->" >
+			Milliseconds
+		</div>
+		<p class="info">The amount of time to wait between samples to give the previous sample pulse time to decay.</p>
+	</div>
+
+	<h3>Message Routing</h3>
+	<div class="inputBlock">
+		<!--#components:routing:HCSR04-->
+	</div>
+
+	<button>Save Settings</button>
+</form>
+<!--#page:template_bottom_html-->

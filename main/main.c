@@ -25,6 +25,7 @@ file: "/mnt/c/Users/leonv/Documents/ESP32/components/http_server/http_server.c" 
 #include "elastic.h"
 #include "radio.h"
 #include "display.h"
+#include "hcsr04.h"
 
 void app_main() {
 
@@ -101,6 +102,8 @@ void app_main() {
 	dieTemperatureInit();
 
 	dieHallInit();
+
+	hcsr04Init();
 
 	wakeTimerInit();
 

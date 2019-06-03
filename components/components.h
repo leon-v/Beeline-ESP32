@@ -22,6 +22,7 @@ typedef struct {
 	const unsigned int messagesOut : 1;
 	xQueueHandle messageQueue;
 	void (* task)(void *);
+	uint32_t tasStackDepth;
 	unsigned int priority; // 0 to 10;
 	void (* loadNVS)(nvs_handle nvsHandle);
 	void (* saveNVS)(nvs_handle nvsHandle);
@@ -46,10 +47,12 @@ typedef struct{
 	char deviceName[16];
 	char sensorName[16];
 	int valueType;
-	int intValue;
-	float floatValue;
-	double doubleValue;
-	char stringValue[32];
+	union {
+		int intValue;
+		float floatValue;
+		double doubleValue;
+		char stringValue[32];
+	};
 } message_t;
 
 void componentsAdd(component_t * component);
