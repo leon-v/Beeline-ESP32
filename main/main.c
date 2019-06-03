@@ -16,16 +16,46 @@ file: "/mnt/c/Users/leonv/Documents/ESP32/components/http_server/http_server.c" 
 #include "components.h"
 #include "wifi.h"
 #include "http_server.h"
+
+#if DEVICE_COMPONENT_ENABLE == 'y'
 #include "device.h"
+#endif
+
+#if MQTT_COMPONENT_ENABLE == 'y'
 #include "mqtt_connection.h"
+#endif
+
+#if DATE_TIME_COMPONENT_ENABLE == 'y'
 #include "datetime.h"
+#endif
+
+#ifdef _DIE_TEMPERATURE_H_
 #include "die_temperature.h"
+#endif
+
+#ifdef _DIE_HALL_H_
 #include "die_hall.h"
+#endif
+
+#ifdef _WAKE_TIMER_H_
 #include "wake_timer.h"
+#endif
+
+#ifdef _ELASTIC_H_
 #include "elastic.h"
+#endif
+
+#ifdef _RADIO_H_
 #include "radio.h"
+#endif
+
+#ifdef DISAPLY_COMPONENT_ENABLE
 #include "display.h"
+#endif
+
+#ifdef _HCSR04_H_
 #include "hcsr04.h"
+#endif
 
 void app_main() {
 
@@ -64,7 +94,7 @@ void app_main() {
             .max_freq_mhz = CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ,
             .min_freq_mhz = CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ,
 	#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
-            .light_sleep_enable = false
+            .light_sleep_enable = true
 	#endif
 	};
 	ESP_ERROR_CHECK( esp_pm_configure(&pm_config) );
@@ -88,30 +118,51 @@ void app_main() {
 
     /*
     * Init Components
+    * WARNING: Changing their init sequence will change their routing ID
     */
 	wiFiInit(apMode);
 
 	httpServerInit();
 
+	#if DEVICE_COMPONENT_ENABLE == 'y'
 	deviceInit();
+	#endif
 
+	#if MQTT_COMPONENT_ENABLE == 'y'
 	mqttConnectionInit();
+	#endif
 
+	#if DATE_TIME_COMPONENT_ENABLE == 'y'
 	dateTimeInit();
+	#endif
 
+	#ifdef _DIE_TEMPERATURE_H_
 	dieTemperatureInit();
+	#endif
 
+	#ifdef _DIE_HALL_H_
 	dieHallInit();
+	#endif
 
+	#ifdef _HCSR04_H_
 	hcsr04Init();
+	#endif
 
+	#ifdef _WAKE_TIMER_H_
 	wakeTimerInit();
+	#endif
 
+	#ifdef _ELASTIC_H_
 	elasticInit();
+	#endif
 
+	#ifdef _RADIO_H_
 	radioInit();
+	#endif
 
+	#ifdef DISAPLY_COMPONENT_ENABLE
 	displayInit();
+	#endif
 
 	/*
     * Call Init on components

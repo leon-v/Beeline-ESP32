@@ -1,0 +1,9 @@
+menu "Component - MQTT"
+
+config MQTT_COMPONENT_ENABLE
+	bool "Enable MQTT Component"
+	default y
+	help
+	Provides MQTT messaging capability
+	requires DEVICE_COMPONENT_ENABLE
+endmenu
