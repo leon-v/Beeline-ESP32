@@ -2,6 +2,8 @@
 
 This is a codebase i have developed to make it easier for myself to create sensor networks that can be integrated with various components.
 
+Its a simple OS that provides a universal messaging format so messages can be routed to and from devlices and protocals like MQTT, LoRa, Elasticsearch and even to be disaplyed on an OLED.  
+
 ## Components
 
 ### datetime / Date Time
