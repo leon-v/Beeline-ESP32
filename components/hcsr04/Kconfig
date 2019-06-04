@@ -1,4 +1,5 @@
 menu "HCSR04"
+	depends HCSR04_COMPONENT_ENABLE
 
 config HCSR04_TRIG_PIN
     int "Trigger GPIO Pin Number"

@@ -1,4 +1,5 @@
 menu "SX1278 Configuration"
+	depends RADIO_COMPONENT_ENABLE
 
 config CS_GPIO
     int "CS GPIO"

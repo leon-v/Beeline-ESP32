@@ -1,8 +1,2 @@
 menu "Component - Date Time"
-
-config DATE_TIME_COMPONENT_ENABLE
-	bool "Enable Date Time Component"
-	default y
-	help
-	Provides NTP support
-endmenu
+	depends DATE_TIME_COMPONENT_ENABLE

@@ -1,0 +1,60 @@
+menu "Beeline Components"
+
+config DATE_TIME_COMPONENT_ENABLE
+	bool "Enable Date Time Component"
+	default y
+	help
+	Provides NTP support
+
+config WAKE_TIMER_COMPONENT_ENABLE
+	bool "Enable Wake Timer component"
+	default y
+	help
+	Provides synchronised time events to other components
+
+config DEVICE_COMPONENT_ENABLE
+	bool "Enable Device component"
+	default y
+	help
+	Provides global configuration for all components like devices unique name
+
+config DIE_HALL_COMPONENT_ENABLE
+	bool "Enable Die Hall Component"
+	default y
+	help
+	Provides NTP support
+	depends WAKE_TIMER_COMPONENT_ENABLE
+
+config DIE_TEMPERATURE_COMPONENT_ENABLE
+	bool "Enable Die Temperature component"
+	default y
+	help
+	Provides messaging to report the die temperature
+	depends WAKE_TIMER_COMPONENT_ENABLE
+
+config HCSR04_COMPONENT_ENABLE
+	bool "Enable HCSR04 ultrasonic ranging component"
+	default y
+	help
+	Provides messaging to report the distance from a HCSR04 IC
+	depends WAKE_TIMER_COMPONENT_ENABLE
+
+config ELASTIC_COMPONENT_ENABLE
+	bool "Enable Elasticserch component"
+	default y
+	help
+	Provides messaging to an elasticsearch server for logging and graphing
+	depends DATE_TIME_COMPONENT_ENABLE
+
+config RADIO_COMPONENT_ENABLE
+	bool "Enable Radio component"
+	default y
+	help
+	Provides messaging to and from radio devices
+	depends DATE_TIME_COMPONENT_ENABLE
+
+config DISAPLY_COMPONENT_ENABLE
+	bool "Enable Display component"
+	default y
+	help
+	Provides a message display interface

@@ -1,0 +1,2 @@
+menu "Component - Die Hall"
+	depends DIE_HALL_COMPONENT_ENABLE

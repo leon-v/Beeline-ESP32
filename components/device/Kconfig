@@ -1,10 +1,2 @@
-menu "Beeline Components"
-	menu "Device"
-
-	config DEVICE_COMPONENT_ENABLE
-		bool "Enable Device component"
-		default y
-		help
-		Provides global configuration for all components like devices unique name
-	endmenu
-endmenu
+menu "Component - Device"
+	depends DEVICE_COMPONENT_ENABLE

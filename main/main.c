@@ -29,31 +29,31 @@ file: "/mnt/c/Users/leonv/Documents/ESP32/components/http_server/http_server.c" 
 #include "datetime.h"
 #endif
 
-#ifdef _DIE_TEMPERATURE_H_
+#if DIE_TEMPERATURE_COMPONENT_ENABLE == 'y'
 #include "die_temperature.h"
 #endif
 
-#ifdef _DIE_HALL_H_
+#if DIE_HALL_COMPONENT_ENABLE == 'y'
 #include "die_hall.h"
 #endif
 
-#ifdef _WAKE_TIMER_H_
+#if WAKE_TIMER_COMPONENT_ENABLE == 'y'
 #include "wake_timer.h"
 #endif
 
-#ifdef _ELASTIC_H_
+#if ELASTIC_COMPONENT_ENABLE == 'y'
 #include "elastic.h"
 #endif
 
-#ifdef _RADIO_H_
+#if RADIO_COMPONENT_ENABLE == 'y'
 #include "radio.h"
 #endif
 
-#ifdef DISAPLY_COMPONENT_ENABLE
+#if DISAPLY_COMPONENT_ENABLE == 'y'
 #include "display.h"
 #endif
 
-#ifdef _HCSR04_H_
+#if HCSR04_COMPONENT_ENABLE == 'y'
 #include "hcsr04.h"
 #endif
 
@@ -136,31 +136,31 @@ void app_main() {
 	dateTimeInit();
 	#endif
 
-	#ifdef _DIE_TEMPERATURE_H_
+	#if DIE_TEMPERATURE_COMPONENT_ENABLE == 'y'
 	dieTemperatureInit();
 	#endif
 
-	#ifdef _DIE_HALL_H_
+	#if DIE_HALL_COMPONENT_ENABLE == 'y'
 	dieHallInit();
 	#endif
 
-	#ifdef _HCSR04_H_
+	#if HCSR04_COMPONENT_ENABLE == 'y'
 	hcsr04Init();
 	#endif
 
-	#ifdef _WAKE_TIMER_H_
+	#if WAKE_TIMER_COMPONENT_ENABLE == 'y'
 	wakeTimerInit();
 	#endif
 
-	#ifdef _ELASTIC_H_
+	#if ELASTIC_COMPONENT_ENABLE == 'y'
 	elasticInit();
 	#endif
 
-	#ifdef _RADIO_H_
+	#if RADIO_COMPONENT_ENABLE == 'y'
 	radioInit();
 	#endif
 
-	#ifdef DISAPLY_COMPONENT_ENABLE
+	#if DISAPLY_COMPONENT_ENABLE == 'y'
 	displayInit();
 	#endif
 

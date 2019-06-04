@@ -1,40 +1,32 @@
-menu "Component - Display"
+menu "SSD1306 Hardware Configuration"
+	depends on DISAPLY_COMPONENT_ENABLE
 
-config DISAPLY_COMPONENT_ENABLE
-	bool "Enable Display component"
+config SSD1306_SDA_PIN
+    int "I2c Serial Data GPIO Pin Number"
+    range 0 39
+    default 4
+    help
+	The GPIO pin on the ESP32 that will be connected to the SDA pin on the SSD1306
+
+config SSD1306_SCL_PIN
+    int "I2c Serial Click GPIO Pin Number"
+    range 0 39
+    default 15
+    help
+	The GPIO pin on the ESP32 that will be connected to the SCL pin on the SSD1306
+
+config SSD1306_RST_ENABLE
+	bool "Enable reset pin"
 	default y
+	help
+	Enable this if you intend to hook up the reset pin on the SSD1306 to the ESP32
 
-	menu "SSD1306 Hardware Configuration"
-		depends on DISAPLY_COMPONENT_ENABLE
-
-	config SSD1306_SDA_PIN
-	    int "I2c Serial Data GPIO Pin Number"
-	    range 0 39
-	    default 4
-	    help
-		The GPIO pin on the ESP32 that will be connected to the SDA pin on the SSD1306
-
-	config SSD1306_SCL_PIN
-	    int "I2c Serial Click GPIO Pin Number"
-	    range 0 39
-	    default 15
-	    help
-		The GPIO pin on the ESP32 that will be connected to the SCL pin on the SSD1306
-
-	config SSD1306_RST_ENABLE
-		bool "Enable reset pin"
-		default y
-		help
-		Enable this if you intend to hook up the reset pin on the SSD1306 to the ESP32
-
-	config SSD1306_RST_PIN
-	    int "I2c Reset GPIO Pin Number"
-	    range 0 39
-	    default 16
-	    depends on SSD1306_RST_ENABLE
-	    help
-		The GPIO pin on the ESP32 that will be connected to the RST pin on the SSD1306
-
-	endmenu
+config SSD1306_RST_PIN
+    int "I2c Reset GPIO Pin Number"
+    range 0 39
+    default 16
+    depends on SSD1306_RST_ENABLE
+    help
+	The GPIO pin on the ESP32 that will be connected to the RST pin on the SSD1306
 
 endmenu
