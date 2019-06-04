@@ -2,7 +2,9 @@
 
 This is a codebase i have developed to make it easier for myself to create sensor networks that can be integrated with various components.
 
-Its a simple OS that provides a universal messaging format so messages can be routed to and from devices and protocals like MQTT, LoRa, Elasticsearch can be disaplyed on an OLED.
+Its a simple OS layer above esp-idf / Freertos that provides a universal messaging format so messages can be routed to and from devices and protocals like MQTT, LoRa, Elasticsearch can be disaplyed on an OLED.
+
+I am currently looking into writing more documentation, so please let me know how i can improove this documentation.
 
 ## Components
 
