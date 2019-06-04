@@ -6,6 +6,25 @@ Its a simple OS layer above esp-idf / Freertos that provides a universal messagi
 
 I am currently looking into writing more documentation, so please let me know how i can improove this documentation.
 
+## Enviroment
+I use Ubuntu shell in Windows 10.
+
+Setup Instructions:
+
+`git clone https://github.com/leon-v/Beeline-ESP32.git`
+`cd Beeline-ESP32`
+`./install.sh`
+
+inshall.sh will install dependencies and setup esp-idf.
+Once completed successfully, run:
+
+`./idf.sh menuconfig` where you can disable components that you don't need.
+then
+
+`./idf.sh flash 5 && ./idf.sh monitor 5` To compile, flash and monitor the console log.
+
+
+
 ## Components
 
 ### datetime / Date Time
