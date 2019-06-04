@@ -1,4 +1,4 @@
-# ESP32 Modular Firmware
+# ESP32 Modular IoT Firmware
 
 This is a codebase i have developed to make it easier for myself to create sensor networks that can be integrated with various components.
 
