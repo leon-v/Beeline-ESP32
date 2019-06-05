@@ -20,6 +20,9 @@ typedef struct {
 	const char * name;
 	const unsigned int messagesIn : 1;
 	const unsigned int messagesOut : 1;
+	unsigned int messagesSent;
+	unsigned int messagesHandeled;
+	unsigned int messagesRecieved;
 	xQueueHandle messageQueue;
 	void (* task)(void *);
 	uint32_t tasStackDepth;
@@ -32,6 +35,7 @@ typedef struct {
 	unsigned int queueLength;
 	const char * queueRecieveWait;
 	httpPage_t * configPage;
+	httpPage_t * statusPage;
 } component_t;
 
 

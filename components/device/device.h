@@ -3,5 +3,6 @@
 
 void deviceInit(void);
 char * deviceGetUniqueName(void);
+void deviceLog(const char * template, ...);
 
 #endif

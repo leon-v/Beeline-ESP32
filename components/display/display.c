@@ -34,7 +34,7 @@ static void loadNVS(nvs_handle nvsHandle){
 	ESP_LOGI(component.name, "Loaded %s", template);
 	messagesLength = 0;
 
-	static char tempTemplate[CONFIG_HTTP_NVS_MAX_STRING_LENGTH];
+	char tempTemplate[CONFIG_HTTP_NVS_MAX_STRING_LENGTH];
 
 	strcpy(tempTemplate, template);
 
@@ -202,7 +202,7 @@ static void task(void * arg) {
 
 		displayUpdate();
 
-		static message_t message;
+		message_t message;
 		if (componentMessageRecieve(&component, &message) != ESP_OK) {
 			continue;
 		}
@@ -216,7 +216,7 @@ void displayInit(void){
 
 	// component.configPage		= &configPage;
 	component.task				= &task;
-	component.tasStackDepth		= 4096;
+	component.tasStackDepth		= 8192;
 	component.loadNVS			= &loadNVS;
 	component.saveNVS			= &saveNVS;
 

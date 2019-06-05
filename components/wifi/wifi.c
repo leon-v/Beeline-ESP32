@@ -3,6 +3,7 @@
 #include <esp_event_loop.h>
 
 #include "components.h"
+#include "device.h"
 #include "wifi_client.h"
 #include "wifi_access_point.h"
 
@@ -41,7 +42,9 @@ static esp_err_t wifiEventHandler(void *ctx, system_event_t *event){
         	break;
 
 		case SYSTEM_EVENT_AP_STACONNECTED:
+
 			ESP_LOGI(component.name, "SYSTEM_EVENT_AP_STACONNECTED "MACSTR, MAC2STR(event->event_info.sta_connected.mac));
+			deviceLog("AP STA Connected "MACSTR, MAC2STR(event->event_info.sta_connected.mac));
 			componentSetReady(&component);
 			break;
 

@@ -1,13 +1,21 @@
 #include "components.h"
 
 static component_t component = {
-	.name = "Device"
+	.name			= "Device",
+	.messagesOut	= 1
 };
 
 static const char config_html_start[] asm("_binary_device_config_html_start");
 static const httpPage_t configPage = {
 	.uri	= "/device_config.html",
 	.page	= config_html_start,
+	.type	= HTTPD_TYPE_TEXT
+};
+
+static const char status_html_start[] asm("_binary_device_status_html_start");
+static const httpPage_t statusPage = {
+	.uri	= "/device_status.html",
+	.page	= status_html_start,
 	.type	= HTTPD_TYPE_TEXT
 };
 
@@ -20,6 +28,7 @@ static void saveNVS(nvs_handle nvsHandle){
 static void loadNVS(nvs_handle nvsHandle){
 	uniqueName = componentsGetNVSString(nvsHandle, uniqueName, "uniqueName", "device");
 }
+
 
 void deviceInit(void) {
 
@@ -51,6 +60,7 @@ void deviceInit(void) {
 	}
 
 	component.configPage	= &configPage;
+	component.statusPage	= &statusPage;
 	component.loadNVS		= &loadNVS;
 	component.saveNVS		= &saveNVS;
 
@@ -59,4 +69,19 @@ void deviceInit(void) {
 
 char * deviceGetUniqueName(void){
 	return uniqueName;
+}
+void deviceLog(const char * format, ...) {
+
+	message_t message;
+	strcpy(message.deviceName, deviceGetUniqueName());
+	strcpy(message.sensorName, component.name);
+
+	message.valueType = MESSAGE_STRING;
+	va_list args;
+	va_start (args, format);
+	vsprintf(message.stringValue,  format, args);
+
+	componentSendMessage(&component, &message);
+
+	va_end (args);
 }

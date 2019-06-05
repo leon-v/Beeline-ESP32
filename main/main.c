@@ -17,46 +17,6 @@ file: "/mnt/c/Users/leonv/Documents/ESP32/components/http_server/http_server.c" 
 #include "wifi.h"
 #include "http_server.h"
 
-#if DEVICE_COMPONENT_ENABLE == 'y'
-#include "device.h"
-#endif
-
-#if MQTT_COMPONENT_ENABLE == 'y'
-#include "mqtt_connection.h"
-#endif
-
-#if DATE_TIME_COMPONENT_ENABLE == 'y'
-#include "datetime.h"
-#endif
-
-#if DIE_TEMPERATURE_COMPONENT_ENABLE == 'y'
-#include "die_temperature.h"
-#endif
-
-#if DIE_HALL_COMPONENT_ENABLE == 'y'
-#include "die_hall.h"
-#endif
-
-#if WAKE_TIMER_COMPONENT_ENABLE == 'y'
-#include "wake_timer.h"
-#endif
-
-#if ELASTIC_COMPONENT_ENABLE == 'y'
-#include "elastic.h"
-#endif
-
-#if RADIO_COMPONENT_ENABLE == 'y'
-#include "radio.h"
-#endif
-
-#if DISAPLY_COMPONENT_ENABLE == 'y'
-#include "display.h"
-#endif
-
-#if HCSR04_COMPONENT_ENABLE == 'y'
-#include "hcsr04.h"
-#endif
-
 void app_main() {
 
 	esp_err_t error;
@@ -124,44 +84,54 @@ void app_main() {
 
 	httpServerInit();
 
-	#if DEVICE_COMPONENT_ENABLE == 'y'
+	#ifdef CONFIG_DEVICE_COMPONENT_ENABLE
+	#include "device.h"
 	deviceInit();
 	#endif
 
-	#if MQTT_COMPONENT_ENABLE == 'y'
+	#ifdef CONFIG_MQTT_COMPONENT_ENABLE
+	#include "mqtt_connection.h"
 	mqttConnectionInit();
 	#endif
 
-	#if DATE_TIME_COMPONENT_ENABLE == 'y'
+	#ifdef CONFIG_DATE_TIME_COMPONENT_ENABLE
+	#include "datetime.h"
 	dateTimeInit();
 	#endif
 
-	#if DIE_TEMPERATURE_COMPONENT_ENABLE == 'y'
+	#ifdef CONFIG_DIE_TEMPERATURE_COMPONENT_ENABLE
+	#include "die_temperature.h"
 	dieTemperatureInit();
 	#endif
 
-	#if DIE_HALL_COMPONENT_ENABLE == 'y'
+	#ifdef CONFIG_DIE_HALL_COMPONENT_ENABLE
+	#include "die_hall.h"
 	dieHallInit();
 	#endif
 
-	#if HCSR04_COMPONENT_ENABLE == 'y'
+	#ifdef HCONFIG_CSR04_COMPONENT_ENABLE
+	#include "hcsr04.h"
 	hcsr04Init();
 	#endif
 
-	#if WAKE_TIMER_COMPONENT_ENABLE == 'y'
+	#ifdef CONFIG_WAKE_TIMER_COMPONENT_ENABLE
+	#include "wake_timer.h"
 	wakeTimerInit();
 	#endif
 
-	#if ELASTIC_COMPONENT_ENABLE == 'y'
+	#ifdef CONFIG_ELASTIC_COMPONENT_ENABLE
+	#include "elastic.h"
 	elasticInit();
 	#endif
 
-	#if RADIO_COMPONENT_ENABLE == 'y'
+	#ifdef CONFIG_RADIO_COMPONENT_ENABLE
+	#include "radio.h"
 	radioInit();
 	#endif
 
-	#if DISAPLY_COMPONENT_ENABLE == 'y'
-	displayInit();
+	#ifdef CONFIG_DISAPLY_COMPONENT_ENABLE
+	#include "display.h"
+	// displayInit();
 	#endif
 
 	/*

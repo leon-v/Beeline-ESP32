@@ -1,0 +1,241 @@
+menu "Beeline Components"
+
+	menu "HTTP NVS"
+
+		config HTTP_NVS_MAX_STRING_LENGTH
+			int "Max NVS Length"
+			range 0 8192
+			default 512
+			help
+			The longest string allowed to be held by NVS
+	endmenu
+
+	#
+	# Support components
+	#
+
+	config DATE_TIME_COMPONENT_ENABLE
+		bool "Enable Date Time Component"
+		default y
+		help
+		Provides NTP support
+
+	menu "Date Time"
+		depends on DATE_TIME_COMPONENT_ENABLE
+	endmenu
+
+
+	config DEVICE_COMPONENT_ENABLE
+		bool "Enable Device component"
+		default y
+		help
+		Provides global configuration for all components like devices unique name
+
+	menu "Device"
+		depends on DEVICE_COMPONENT_ENABLE
+	endmenu
+
+	config WAKE_TIMER_COMPONENT_ENABLE
+		bool "Enable Wake Timer component"
+		default y
+		help
+		Provides synchronised time events to other components
+
+	menu "Wake Timer"
+		depends on WAKE_TIMER_COMPONENT_ENABLE
+	endmenu
+
+	#
+	# Message Sources / Sensor components
+	#
+
+	config DIE_HALL_COMPONENT_ENABLE
+		bool "Enable Die Hall Component"
+		default y
+		help
+		Provides NTP support
+		select WAKE_TIMER_COMPONENT_ENABLE
+		select DEVICE_COMPONENT_ENABLE
+
+	menu "Die Hall"
+		depends on DIE_HALL_COMPONENT_ENABLE
+	endmenu
+
+	config DIE_TEMPERATURE_COMPONENT_ENABLE
+		bool "Enable Die Temperature component"
+		default y
+		help
+		Provides messaging to report the die temperature
+		select WAKE_TIMER_COMPONENT_ENABLE
+		select DEVICE_COMPONENT_ENABLE
+
+	menu "Die Temperature"
+		depends on DIE_TEMPERATURE_COMPONENT_ENABLE
+	endmenu
+
+
+	config HCSR04_COMPONENT_ENABLE
+		bool "Enable HCSR04 ultrasonic ranging component"
+		default y
+		help
+		Provides messaging to report the distance from a HCSR04 IC
+		select WAKE_TIMER_COMPONENT_ENABLE
+		select DEVICE_COMPONENT_ENABLE
+
+	menu "HCSR04"
+		depends on HCSR04_COMPONENT_ENABLE
+
+		config HCSR04_TRIG_PIN
+			int "Trigger GPIO Pin Number"
+			range 0 39
+			default 13
+			help
+			The GPIO pin on the ESP32 that will be connected to the HCSR04 Trig pin. Must be output capable.
+
+		config HCSR04_ECHO_PIN
+			int "Echo GPIO Pin Number"
+			range 0 39
+			default 12
+			help
+			The GPIO pin on the ESP32 that will be connected to the HCSR04 Echo pin. Must be input and GPIO interrupt capable.
+
+	endmenu
+
+	#
+	# Message Sinks
+	#
+
+	config DISAPLY_COMPONENT_ENABLE
+		bool "Enable Display component"
+		default y
+		help
+		Provides a message display interface
+
+	menu "SSD1306 Hardware Configuration"
+		depends on DISAPLY_COMPONENT_ENABLE
+
+		config SSD1306_SDA_PIN
+			int "I2c Serial Data GPIO Pin Number"
+			range 0 39
+			default 4
+			help
+			The GPIO pin on the ESP32 that will be connected to the SDA pin on the SSD1306
+
+		config SSD1306_SCL_PIN
+			int "I2c Serial Click GPIO Pin Number"
+			range 0 39
+			default 15
+			help
+			The GPIO pin on the ESP32 that will be connected to the SCL pin on the SSD1306
+
+		config SSD1306_RST_ENABLE
+			bool "Enable reset pin"
+			default y
+			help
+			Enable this if you intend to hook up the reset pin on the SSD1306 to the ESP32
+
+		config SSD1306_RST_PIN
+			int "I2c Reset GPIO Pin Number"
+			range 0 39
+			default 16
+			depends on SSD1306_RST_ENABLE
+			help
+			The GPIO pin on the ESP32 that will be connected to the RST pin on the SSD1306
+
+	endmenu
+
+	#
+	# External message routing components
+	#
+
+	config ELASTIC_COMPONENT_ENABLE
+		bool "Enable Elasticserch component"
+		default y
+		help
+		Provides messaging to an elasticsearch server for logging and graphing
+		select DATE_TIME_COMPONENT_ENABLE
+
+	menu "Elasticsearch"
+		depends on ELASTIC_COMPONENT_ENABLE
+	endmenu
+
+	config RADIO_COMPONENT_ENABLE
+		bool "Enable Radio component"
+		default y
+		help
+		Provides messaging to and from radio devices
+
+	menu "SX1278"
+		depends on RADIO_COMPONENT_ENABLE
+
+		config RADIO_SX1278_DRIVER_ENABLE
+			bool "Enable SX1278 Radio"
+			default y
+			help
+			Provides messaging to and from a SX1278 for the radio component
+
+		menu "Hardware Interface Configuration"
+			depends on RADIO_SX1278_DRIVER_ENABLE
+
+			config RADIO_SX1278_CS_GPIO
+				int "CS GPIO"
+				range 0 35
+				default 18
+				help
+				Pin Number where the NCS pin of the SX1278 module is connected to.
+
+			config RADIO_SX1278_RST_GPIO
+				int "RST GPIO"
+				range 0 35
+				default 14
+				help
+				Pin Number where the NRST pin of the SX1278 module is connected to.
+
+			config RADIO_SX1278_MISO_GPIO
+				int "MISO GPIO"
+				range 0 35
+				default 19
+				help
+				Pin Number to be used as the MISO SPI signal.
+
+			config RADIO_SX1278_MOSI_GPIO
+				int "MOSI GPIO"
+				range 0 35
+				default 27
+				help
+				Pin Number to be used as the MOSI SPI signal.
+
+			config RADIO_SX1278_SCK_GPIO
+				int "SCK GPIO"
+				range 0 35
+				default 5
+				help
+				Pin Number to be used as the SCK SPI signal.
+
+			config RADIO_SX1278_IRQ_GPIO
+				int "IRQ GPIO"
+				range 0 35
+				default 26
+				help
+				Pin Number to be used as the IRQ signal.
+
+		endmenu
+
+	endmenu
+
+
+
+	config MQTT_COMPONENT_ENABLE
+		bool "Enable MQTT Component"
+		default y
+		help
+		Provides MQTT messaging capability
+		select DEVICE_COMPONENT_ENABLE
+
+
+	menu "MQTT"
+		depends on MQTT_COMPONENT_ENABLE
+	endmenu
+
+
+endmenu

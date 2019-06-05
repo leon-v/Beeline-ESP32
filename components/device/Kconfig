@@ -1,2 +1,0 @@
-menu "Component - Device"
-	depends DEVICE_COMPONENT_ENABLE

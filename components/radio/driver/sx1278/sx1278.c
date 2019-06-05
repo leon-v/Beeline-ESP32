@@ -86,9 +86,9 @@ void sx1278WriteRegister(int reg, int val){
       .rx_buffer = in
    };
 
-   gpio_set_level(CONFIG_CS_GPIO, 0);
+   gpio_set_level(CONFIG_RADIO_SX1278_CS_GPIO, 0);
    spi_device_transmit(__spi, &t);
-   gpio_set_level(CONFIG_CS_GPIO, 1);
+   gpio_set_level(CONFIG_RADIO_SX1278_CS_GPIO, 1);
 }
 
 /**
@@ -107,9 +107,9 @@ int sx1278ReadRegister(int reg){
       .rx_buffer = in
    };
 
-   gpio_set_level(CONFIG_CS_GPIO, 0);
+   gpio_set_level(CONFIG_RADIO_SX1278_CS_GPIO, 0);
    spi_device_transmit(__spi, &t);
-   gpio_set_level(CONFIG_CS_GPIO, 1);
+   gpio_set_level(CONFIG_RADIO_SX1278_CS_GPIO, 1);
    return in[1];
 }
 
@@ -117,9 +117,9 @@ int sx1278ReadRegister(int reg){
  * Perform physical reset on the Lora chip
  */
 void sx1278Reset(void){
-   gpio_set_level(CONFIG_RST_GPIO, 0);
+   gpio_set_level(CONFIG_RADIO_SX1278_RST_GPIO, 0);
    vTaskDelay(pdMS_TO_TICKS(1));
-   gpio_set_level(CONFIG_RST_GPIO, 1);
+   gpio_set_level(CONFIG_RADIO_SX1278_RST_GPIO, 1);
    vTaskDelay(pdMS_TO_TICKS(10));
 }
 
@@ -283,15 +283,15 @@ int sx1278Init(void){
    /*
     * Configure CPU hardware to communicate with the radio chip
     */
-   gpio_pad_select_gpio(CONFIG_RST_GPIO);
-   gpio_set_direction(CONFIG_RST_GPIO, GPIO_MODE_OUTPUT);
-   gpio_pad_select_gpio(CONFIG_CS_GPIO);
-   gpio_set_direction(CONFIG_CS_GPIO, GPIO_MODE_OUTPUT);
+   gpio_pad_select_gpio(CONFIG_RADIO_SX1278_RST_GPIO);
+   gpio_set_direction(CONFIG_RADIO_SX1278_RST_GPIO, GPIO_MODE_OUTPUT);
+   gpio_pad_select_gpio(CONFIG_RADIO_SX1278_CS_GPIO);
+   gpio_set_direction(CONFIG_RADIO_SX1278_CS_GPIO, GPIO_MODE_OUTPUT);
 
    spi_bus_config_t bus = {
-      .miso_io_num = CONFIG_MISO_GPIO,
-      .mosi_io_num = CONFIG_MOSI_GPIO,
-      .sclk_io_num = CONFIG_SCK_GPIO,
+      .miso_io_num = CONFIG_RADIO_SX1278_MISO_GPIO,
+      .mosi_io_num = CONFIG_RADIO_SX1278_MOSI_GPIO,
+      .sclk_io_num = CONFIG_RADIO_SX1278_SCK_GPIO,
       .quadwp_io_num = -1,
       .quadhd_io_num = -1,
       .max_transfer_sz = 0

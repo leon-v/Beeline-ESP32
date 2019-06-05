@@ -1,2 +1,0 @@
-menu "Component - Date Time"
-	depends DATE_TIME_COMPONENT_ENABLE

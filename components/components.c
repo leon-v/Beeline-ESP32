@@ -105,6 +105,10 @@ void componentsInit(void){
 			httpServerAddPage(pComponent->configPage);
 		}
 
+		if (pComponent->statusPage != NULL){
+			httpServerAddPage(pComponent->statusPage);
+		}
+
 		componentsLoadNVS(pComponent);
 
 		ESP_LOGI(pComponent->name, "Init");
@@ -282,6 +286,28 @@ void componentsGetHTML(httpd_req_t *req, char * ssiTag){
 			ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, "<a "));
 				ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, "href=\""));
 				ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, pComponent->configPage->uri));
+				ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, "\" "));
+			ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, ">"));
+			ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, pComponent->name));
+			ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, "</li>"));
+		}
+
+
+	}
+	else if (strcmp(command, "statusLinks") == 0){
+
+		for (unsigned char i=0; i < componentsLength; i++) {
+
+			component_t * pComponent = components[i];
+
+			if (pComponent->statusPage == NULL){
+				continue;
+			}
+
+			ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, "<li>"));
+			ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, "<a "));
+				ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, "href=\""));
+				ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, pComponent->statusPage->uri));
 				ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, "\" "));
 			ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, ">"));
 			ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, pComponent->name));
@@ -499,6 +525,8 @@ void componentSendMessage(component_t * pComponentFrom, message_t * pMessage) {
 
 	componentLogMessage(pComponentFrom, pMessage, "Forwarding ");
 
+	pComponentFrom->messagesSent++;
+
 	nvs_handle nvsHandle;
 	uint64_t routeBits = 0;
 	if (nvs_open(pComponentFrom->name, NVS_READONLY, &nvsHandle) == ESP_OK){
@@ -517,6 +545,8 @@ void componentSendMessage(component_t * pComponentFrom, message_t * pMessage) {
 		if ( ((routeBits >> i) & 0x01) == 0){
 			continue;
 		}
+
+		pComponentTo->messagesRecieved++;
 
 		if (!uxQueueSpacesAvailable(pComponentTo->messageQueue)) {
 			ESP_LOGE(pComponentTo->name, "No room in message queue for %s", pComponentFrom->name);
@@ -542,6 +572,8 @@ esp_err_t componentMessageRecieve(component_t * pComponent, message_t * pMessage
 	if (!xQueueReceive(pComponent->messageQueue, pMessage, 60000 / portTICK_RATE_MS)) {
 		return ESP_FAIL;
 	}
+
+	pComponent->messagesHandeled++;
 
 	return ESP_OK;
 }
