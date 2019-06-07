@@ -11,8 +11,12 @@
 			Text entered here will be displayed on the OLED display<br>
 			To display message values, use this format:<br>
 			[DEVLICE:SENSOR]<br>
-			e.g. [<!--#uniqueName-->:Battery] will show this devices battery voltage.<br>
-			NOTE: Messages must be routed to this device's display before they show.<br>
+			e.g. [<!--#nvs:Device:string:uniqueName-->:Battery] will show this devices battery voltage.<br>
+			<br>
+			The device name can be omitted to show the value for this device.<br>
+			e.ge.g. [Battery] will also show this devices battery voltage.<br>
+			<br>
+			NOTE: Messages must be routed to this device's Display component before they show.<br>
 		</p>
 	</div>
 
