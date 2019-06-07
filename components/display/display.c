@@ -19,9 +19,8 @@ static const httpPage_t configPage = {
 
 static char * template;
 
-#define DISAPLY_MAX_MESSGES 16
 static int messagesLength;
-static message_t messages[DISAPLY_MAX_MESSGES];
+static message_t messages[CONFIG_DISAPLY_MAX_MESSGES];
 
 static void saveNVS(nvs_handle nvsHandle){
 	componentsSetNVSString(nvsHandle, template, "template");
@@ -34,53 +33,62 @@ static void loadNVS(nvs_handle nvsHandle){
 	ESP_LOGI(component.name, "Loaded %s", template);
 	messagesLength = 0;
 
-	char tempTemplate[CONFIG_HTTP_NVS_MAX_STRING_LENGTH];
-
+	char * tempTemplate;
+	tempTemplate = malloc(strlen(template) + 1);
 	strcpy(tempTemplate, template);
 
 	char * token;
-	char * device;
-	char * sensor;
-
 	token = strtok(tempTemplate, "[");
 
 	while (token){
 
-		device = strtok(NULL, ":]");
+		char * device = NULL;
+		device = strtok(NULL, "]");
 
-		sensor = strtok(NULL, "]");
+		if (!device) {
+			goto NEXT_TOKEN;
+		}
 
-		// No sensor name found, use device name
-		if (!sensor){
+		char * sensor = NULL;
+		sensor = strstr(device, ":");
+
+		if (sensor){
+			sensor[0] = '\0';
+			sensor++;
+		}
+		else{
 			sensor = device;
 			device = deviceGetUniqueName();
 		}
 
-		if (sensor){
-
-			if (messagesLength >= DISAPLY_MAX_MESSGES) {
-				ESP_LOGE(component.name, "No room left in display value message buffer");
-			}
-
-			else{
-				message_t * message = &messages[messagesLength];
-
-				strcpy(message->deviceName, device);
-				strcpy(message->sensorName, sensor);
-
-				// pre set a default value
-				message->valueType = MESSAGE_STRING;
-				strcpy(message->stringValue, "???");
-
-				ESP_LOGI(component.name, "Found tag %s:%s", message->deviceName, message->sensorName);
-
-				messagesLength++;
-			}
-
+		if (!sensor) {
+			goto NEXT_TOKEN;
 		}
 
+		if (messagesLength >= CONFIG_DISAPLY_MAX_MESSGES) {
+			ESP_LOGE(component.name, "No room left in display value message buffer");
+		}
+
+		else{
+			message_t * message = &messages[messagesLength];
+
+			strcpy(message->deviceName, device);
+			strcpy(message->sensorName, sensor);
+
+			// pre set a default value
+			message->valueType = MESSAGE_STRING;
+			strcpy(message->stringValue, "???");
+
+			ESP_LOGI(component.name, "Found tag %s/%s", message->deviceName, message->sensorName);
+
+			messagesLength++;
+		}
+
+NEXT_TOKEN:
 		token = strtok(NULL, "[");
 	}
+
+	free(tempTemplate);
 }
 
 static void displayGetMessageValue(char * device, char * sensor, char * value) {
@@ -116,41 +124,59 @@ static void displayGetMessageValue(char * device, char * sensor, char * value) {
 
 static void displayUpdate(void){
 
-	char tempTemplate[CONFIG_HTTP_NVS_MAX_STRING_LENGTH];
+	char * tempTemplate;
+	tempTemplate = malloc(strlen(template) + 1);
 	strcpy(tempTemplate, template);
+
+	char * display;
+	display = malloc(1);
+	strcpy(display, "");
 
 	char * token;
 	token = strtok(tempTemplate, "[");
 
-	char display[CONFIG_HTTP_NVS_MAX_STRING_LENGTH];
-	strcpy(display, "");
+	while (token){
 
-	while (token != NULL){
-
+		display = realloc(display, strlen(display) + strlen(token) + 1);
 		strcat(display, token);
 
-		char * device;
-		device = strtok(NULL, ":]");
+		char * device = NULL;
+		device = strtok(NULL, "]");
 
-		char * sensor;
-		sensor = strtok(NULL, "]");
+		if (!device){
+			goto NEXT_TOKEN;
+		}
 
-		if (!sensor){
+		char * sensor = strstr(device, ":");
+
+		if (sensor){
+			sensor[0] = '\0';
+			sensor++;
+		}
+		else{
 			sensor = device;
 			device = deviceGetUniqueName();
 		}
 
-		if (sensor){
-
-			char value[32];
-			displayGetMessageValue(device, sensor, value);
-			strcat(display, value);
+		if (!sensor){
+			goto NEXT_TOKEN;
 		}
 
+		char value[32];
+		displayGetMessageValue(device, sensor, value);
+
+		display = realloc(display, strlen(display) + strlen(value) + 1);
+		strcat(display, value);
+
+NEXT_TOKEN:
 		token = strtok(NULL, "[");
 	}
 
+	free(tempTemplate);
+
 	ssd1306SetText(display);
+
+	free(display);
 }
 
 static void updateVariable(message_t * message){
@@ -200,23 +226,22 @@ static void task(void * arg) {
 
 	while (1) {
 
-		displayUpdate();
-
 		message_t message;
 		if (componentMessageRecieve(&component, &message) != ESP_OK) {
 			continue;
 		}
 
 		updateVariable(&message);
+
+		displayUpdate();
 	}
 }
 
 
 void displayInit(void){
 
-	// component.configPage		= &configPage;
+	component.configPage		= &configPage;
 	component.task				= &task;
-	component.tasStackDepth		= 8192;
 	component.loadNVS			= &loadNVS;
 	component.saveNVS			= &saveNVS;
 

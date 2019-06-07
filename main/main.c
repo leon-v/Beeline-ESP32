@@ -131,7 +131,7 @@ void app_main() {
 
 	#ifdef CONFIG_DISAPLY_COMPONENT_ENABLE
 	#include "display.h"
-	// displayInit();
+	displayInit();
 	#endif
 
 	/*

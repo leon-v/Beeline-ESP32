@@ -61,6 +61,7 @@ static esp_err_t ssd1306ModuleInit() {
 	i2c_master_write_byte(cmd, OLED_I2C_WRITE, true);
 
 	i2c_master_write_byte(cmd, OLED_CONTROL_BYTE_CMD_STREAM, true);
+
 	i2c_master_write_byte(cmd, OLED_CMD_SET_CHARGE_PUMP, true);
 	i2c_master_write_byte(cmd, 0x14, true);
 
@@ -121,7 +122,6 @@ static esp_err_t ssd1306ModuleInit() {
 void ssd1306ClearLine(uint8_t line, uint8_t length) {
 
 	uint8_t zero[128] = {0};
-	// memset(zero, 0xAA, 128);
 
 	i2c_cmd_handle_t cmd;
 
@@ -211,7 +211,7 @@ void ssd1306SendString(i2c_cmd_handle_t cmd, char * string) {
 		column++;
 	}
 
-	while (column < 128) {
+	while ((column + FONT_WIDTH - 1) < 128) {
 		ESP_ERROR_CHECK_WITHOUT_ABORT(i2c_master_write(cmd, font[' '], FONT_WIDTH, true));
 		column+= FONT_WIDTH;
 	}

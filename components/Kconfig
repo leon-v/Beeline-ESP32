@@ -111,8 +111,13 @@ menu "Beeline Components"
 		help
 		Provides a message display interface
 
+
+	config DISAPLY_MAX_MESSGES
+		int "Maximum message values that can be displayed on screen"
+		range 0 128
+		default 16
+
 	menu "SSD1306 Hardware Configuration"
-		depends on DISAPLY_COMPONENT_ENABLE
 
 		config SSD1306_SDA_PIN
 			int "I2c Serial Data GPIO Pin Number"
