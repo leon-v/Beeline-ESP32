@@ -109,7 +109,7 @@ void app_main() {
 	dieHallInit();
 	#endif
 
-	#ifdef HCONFIG_CSR04_COMPONENT_ENABLE
+	#ifdef CONFIG_CSR04_COMPONENT_ENABLE
 	#include "hcsr04.h"
 	hcsr04Init();
 	#endif
@@ -132,6 +132,11 @@ void app_main() {
 	#ifdef CONFIG_DISAPLY_COMPONENT_ENABLE
 	#include "display.h"
 	displayInit();
+	#endif
+
+	#ifdef CONFIG_ADC_COMPONENT_ENABLE
+	#include "adc.h"
+	adcInit();
 	#endif
 
 	/*

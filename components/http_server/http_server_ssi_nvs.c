@@ -48,6 +48,31 @@ void httpServerSSINVSGetChecked(httpd_req_t *req, nvs_handle nvsHandle, char * n
 	}
 }
 
+void httpServerSSINVSGetu8Selected(httpd_req_t *req, nvs_handle nvsHandle, char * nvsKey, uint8_t match){
+
+	uint8_t value;
+	ESP_ERROR_CHECK_WITHOUT_ABORT(nvs_get_u8(nvsHandle, nvsKey, &value));
+
+	if (match == value) {
+		ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, "selected"));
+	}
+}
+
+void httpServerSSINVSSetu8(nvs_handle nvsHandle, char * nvsKey, char * postValue){
+	ESP_ERROR_CHECK_WITHOUT_ABORT(nvs_set_u8(nvsHandle, nvsKey, atoi(postValue)));
+}
+
+void httpServerSSINVSGetu8(httpd_req_t *req, nvs_handle nvsHandle, char * nvsKey){
+	uint32_t value;
+	char intValStr[8];
+
+	ESP_ERROR_CHECK_WITHOUT_ABORT(nvs_get_u8(nvsHandle, nvsKey, &value));
+
+	itoa(value, intValStr, 10);
+
+	ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, intValStr));
+}
+
 void httpServerSSINVSSetu32(nvs_handle nvsHandle, char * nvsKey, char * postValue){
 	ESP_ERROR_CHECK_WITHOUT_ABORT(nvs_set_u32(nvsHandle, nvsKey, atoi(postValue)));
 }
@@ -63,21 +88,71 @@ void httpServerSSINVSGetu32(httpd_req_t *req, nvs_handle nvsHandle, char * nvsKe
 	ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, intValStr));
 }
 
+void httpServerSSINVSSetFloat(nvs_handle nvsHandle, char * nvsKey, char * postValue) {
+
+	float value = atof(postValue);
+
+	ESP_ERROR_CHECK(nvs_set_blob(nvsHandle, nvsKey, &value, sizeof(float)));
+}
+
+void httpServerSSINVSGetFloat(httpd_req_t *req, nvs_handle nvsHandle, char * nvsKey) {
+
+	size_t nvsLength = sizeof(float);
+
+	float value;
+
+	esp_err_t espError = nvs_get_blob(nvsHandle, nvsKey, &value, &nvsLength);
+
+	if (espError != ESP_OK) {
+		ESP_ERROR_CHECK_WITHOUT_ABORT(espError);
+		return;
+	}
+
+	char strVal[32];
+
+	sprintf(strVal, "%.4f", value);
+
+	ESP_ERROR_CHECK_WITHOUT_ABORT(httpd_resp_send_chunk(req, strVal, nvsLength));
+}
+
 void httpServerSSINVSSetString(nvs_handle nvsHandle, char * nvsKey, char * value){
 	ESP_ERROR_CHECK(nvs_set_str(nvsHandle, nvsKey, value));
 }
 
 void httpServerSSINVSGetString(httpd_req_t *req, nvs_handle nvsHandle, char * nvsKey){
-	size_t nvsLength = CONFIG_HTTP_NVS_MAX_STRING_LENGTH;
-	char strVal[CONFIG_HTTP_NVS_MAX_STRING_LENGTH];
 
-	ESP_ERROR_CHECK_WITHOUT_ABORT(nvs_get_str(nvsHandle, nvsKey, strVal, &nvsLength));
-	nvsLength--;
+	size_t nvsLength = 0;
 
-	if (nvsLength > 0) {
-		ESP_ERROR_CHECK(httpd_resp_send_chunk(req, strVal, nvsLength));
+	char * strVal = NULL;
+
+	esp_err_t espError;
+
+	espError = nvs_get_str(nvsHandle, nvsKey, strVal, &nvsLength);
+
+	if (espError != ESP_OK) {
+		ESP_ERROR_CHECK_WITHOUT_ABORT(espError);
+		return;
 	}
 
+	if (nvsLength <= 0) {
+		return;
+	}
+
+	strVal = malloc(nvsLength);
+
+	espError = nvs_get_str(nvsHandle, nvsKey, strVal, &nvsLength);
+
+	if (espError != ESP_OK) {
+		free(strVal);
+		ESP_ERROR_CHECK_WITHOUT_ABORT(espError);
+		return;
+	}
+
+	nvsLength--;
+
+	ESP_ERROR_CHECK_WITHOUT_ABORT(httpd_resp_send_chunk(req, strVal, nvsLength));
+
+	free(strVal);
 }
 
 void httpServerSSINVSGet(httpd_req_t *req, char * ssiTag){
@@ -112,6 +187,12 @@ void httpServerSSINVSGet(httpd_req_t *req, char * ssiTag){
 	if (strcmp(nvsType, "string") == 0){
 		httpServerSSINVSGetString(req, nvsHandle, nvsKey);
 	}
+	else if (strcmp(nvsType, "float") == 0){
+		httpServerSSINVSGetFloat(req, nvsHandle, nvsKey);
+	}
+	else if (strcmp(nvsType, "u8") == 0){
+		httpServerSSINVSGetu8(req, nvsHandle, nvsKey);
+	}
 	else if (strcmp(nvsType, "u32") == 0){
 		httpServerSSINVSGetu32(req, nvsHandle, nvsKey);
 	}
@@ -125,7 +206,12 @@ void httpServerSSINVSGet(httpd_req_t *req, char * ssiTag){
 		char * bitStr = strtok(NULL, ":");
 		httpServerSSINVSGetChecked(req, nvsHandle, nvsKey, atoi(bitStr));
 	}
+	else if (strcmp(nvsType, "u8Selected") == 0){
+		char * match = strtok(NULL, ":");
+		httpServerSSINVSGetu8Selected(req, nvsHandle, nvsKey, atoi(match));
+	}
 	else{
+		ESP_LOGE(TAG, "Failed to parse NVS type: %s", nvsType);
 		ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, "Failed to parse NVS type"));
 	}
 
@@ -159,6 +245,12 @@ void httpServerSSINVSSet(char * ssiTag, char * value){
 
 	if (strcmp(nvsType, "string") == 0){
 		httpServerSSINVSSetString(nvsHandle, nvsKey, value);
+	}
+	else if (strcmp(nvsType, "float") == 0){
+		httpServerSSINVSSetFloat(nvsHandle, nvsKey, value);
+	}
+	else if (strcmp(nvsType, "u8") == 0){
+		httpServerSSINVSSetu8(nvsHandle, nvsKey, value);
 	}
 	else if (strcmp(nvsType, "u32") == 0){
 		httpServerSSINVSSetu32(nvsHandle, nvsKey, value);

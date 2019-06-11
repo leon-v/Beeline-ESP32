@@ -81,6 +81,13 @@ void componentsSetNVSString(nvs_handle nvsHandle, char * string, const char * ke
 uint32_t componentsGetNVSu32(nvs_handle nvsHandle, const char * key, const uint32_t def);
 void componentsSetNVSu32(nvs_handle nvsHandle, const char * key, uint32_t value);
 
+float componentsGetNVSFloat(nvs_handle nvsHandle, const char * key, const uint8_t def);
+void componentsSetNVSFloat(nvs_handle nvsHandle, const char * key, float value);
+
+uint8_t componentsGetNVSu8(nvs_handle nvsHandle, const char * key, const uint8_t def);
+void componentsSetNVSu8(nvs_handle nvsHandle, const char * key, uint8_t value);
+
+
 esp_err_t componentsQueueSend(component_t * pComponent, void * buffer);
 esp_err_t componentQueueRecieve(component_t * pComponent, const char * name, void * buffer);
 

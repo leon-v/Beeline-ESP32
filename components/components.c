@@ -182,6 +182,7 @@ esp_err_t componentQueueRecieve(component_t * pComponent, const char * name, voi
 	}
 
 	if ( (!pComponent->queueItemLength) || (!pComponent->queueLength) ) {
+		ESP_LOGE(pComponent->name, "has no queue to listen for. Set queueItemLength and queueLength.");
 		return ESP_FAIL;
 	}
 
@@ -443,6 +444,47 @@ void componentsSetNVSString(nvs_handle nvsHandle, char * string, const char * ke
 	}
 
 	ESP_ERROR_CHECK(nvs_set_str(nvsHandle, key, string));
+}
+
+float componentsGetNVSFloat(nvs_handle nvsHandle, const char * key, const uint8_t def) {
+	float value;
+
+	size_t length = sizeof(float);
+	esp_err_t espError = nvs_get_blob(nvsHandle, key, &value, &length);
+
+	if (espError == ESP_ERR_NVS_NOT_FOUND) {
+		return def;
+	}
+
+	else if (espError != ESP_OK){
+		ESP_ERROR_CHECK_WITHOUT_ABORT(espError);
+	}
+
+	return value;
+}
+
+void componentsSetNVSFloat(nvs_handle nvsHandle, const char * key, float value) {
+	ESP_ERROR_CHECK(nvs_set_blob(nvsHandle, key, &value, sizeof(float)));
+}
+
+uint8_t componentsGetNVSu8(nvs_handle nvsHandle, const char * key, const uint8_t def) {
+	uint8_t value;
+
+	esp_err_t espError = nvs_get_u8(nvsHandle, key, &value);
+
+	if (espError == ESP_ERR_NVS_NOT_FOUND) {
+		return def;
+	}
+
+	else if (espError != ESP_OK){
+		ESP_ERROR_CHECK_WITHOUT_ABORT(espError);
+	}
+
+	return value;
+}
+
+void componentsSetNVSu8(nvs_handle nvsHandle, const char * key, uint8_t value) {
+	ESP_ERROR_CHECK(nvs_set_u8(nvsHandle, key, value));
 }
 
 // esp_err_t nvs_get_u32 (nvs_handle handle, const char* key, uint32_t* out_value);

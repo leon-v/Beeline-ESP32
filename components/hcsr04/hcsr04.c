@@ -5,7 +5,6 @@
 
 static component_t component = {
 	.name = "HCSR04",
-	.messagesIn = 0,
 	.messagesOut = 1,
 };
 

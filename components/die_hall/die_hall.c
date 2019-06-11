@@ -50,8 +50,6 @@ static void task(void * arg) {
 
 		count = 0;
 
-		ESP_LOGW(component.name, "Got queue item from wake timer");
-
 		static message_t message;
 		strcpy(message.deviceName, deviceGetUniqueName());
 		strcpy(message.sensorName, component.name);

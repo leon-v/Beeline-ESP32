@@ -398,7 +398,7 @@ static void httpServerStart(void) {
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
     config.stack_size = HTTP_STACK_SIZE;
 
-    config.max_uri_handlers = 32;
+    config.max_uri_handlers = 64;
 
     // Start the httpd server
     ESP_LOGI(component.name, "Starting server on port: %d", config.server_port);

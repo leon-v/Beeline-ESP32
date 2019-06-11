@@ -242,5 +242,15 @@ menu "Beeline Components"
 		depends on MQTT_COMPONENT_ENABLE
 	endmenu
 
+	config ADC_COMPONENT_ENABLE
+		bool "Enable ADC Component"
+		default y
+		help
+		Provides ADC messaging capability
+		select DEVICE_COMPONENT_ENABLE
+
+	menu "ADC"
+		depends on ADC_COMPONENT_ENABLE
+	endmenu
 
 endmenu
