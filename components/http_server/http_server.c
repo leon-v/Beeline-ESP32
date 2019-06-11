@@ -177,24 +177,6 @@ static char * httpServerGetTokenValue(tokens_t * tokens, const char * key){
 	return NULL;
 }
 
-static esp_err_t httpServerGetPost(httpd_req_t *req, char * postString, unsigned int postStringLength){
-
-	int ret, remaining = req->content_len;
-
-    while (remaining > 0) {
-        /* Read the data for the request */
-        if ((ret = httpd_req_recv(req, postString, MIN(remaining, postStringLength))) < 0) {
-            return ESP_FAIL;
-        }
-
-        remaining -= ret;
-    }
-
-    postString[req->content_len] = '\0';
-
-    return ESP_OK;
-}
-
 void httpServerPageReplaceTag(httpd_req_t *req, char * tag) {
 
 	char * module = strtok(tag, ":");
@@ -229,8 +211,6 @@ static void httpServerPageGetContent(httpd_req_t *req){
 
 	httpPage_t * httpPage = (httpPage_t *) req->user_ctx;
 
-	char tag[CONFIG_HTTP_NVS_MAX_STRING_LENGTH];
-
 	char * tagEndHTMLStart = httpPage->page;
 	char * tagStartHTMLEnd = strstr(tagEndHTMLStart, START_SSI);
 
@@ -261,10 +241,15 @@ static void httpServerPageGetContent(httpd_req_t *req){
 
 		length = tagEndHTMLStart - tagStartHTMLEnd;
 
+		char * tag;
+		tag = malloc(length + 1);
+
 		memcpy(tag, tagStartHTMLEnd, length);
 		tag[length] = '\0';
 
 		httpServerPageReplaceTag(req, tag);
+
+		free(tag);
 
 		tagEndHTMLStart+= strlen(END_SSI);
 		tagStartHTMLEnd = strstr(tagEndHTMLStart, START_SSI);
@@ -278,9 +263,42 @@ static void httpServerPageGetContent(httpd_req_t *req){
 	}
 }
 
-void httpServerPagePost(httpd_req_t *req, char * buffer, size_t bufferLength){
+void httpServerPagePost(httpd_req_t *req){
 
-	ESP_ERROR_CHECK(httpServerGetPost(req, buffer, bufferLength));
+	int remaining = req->content_len;
+
+	if (remaining <= 0) {
+		ESP_LOGE(component.name, "No POST data");
+		return;
+	}
+
+	int result;
+
+	char * buffer;
+	buffer = malloc(remaining + 1);
+
+	while (remaining > 0) {
+
+        /* Read the data for the request */
+        result = httpd_req_recv(req, buffer, remaining);
+
+        if (result <= 0) {
+
+            if (result == HTTPD_SOCK_ERR_TIMEOUT) {
+                /* Retry receiving if timeout occurred */
+                continue;
+            }
+
+            break;
+        }
+
+        remaining -= result;
+    }
+
+    if (remaining > 0) {
+    	ESP_LOGE(component.name, "Failed to get POST data");
+    	return;
+    }
 
 	tokens_t post;
 	httpServerParseValues(&post, buffer, "&", "=", "\0");
@@ -306,6 +324,8 @@ void httpServerPagePost(httpd_req_t *req, char * buffer, size_t bufferLength){
 			ESP_LOGE(component.name, "Failed to parse module for tag");
 		}
 	}
+
+	free(buffer);
 }
 
 
@@ -320,10 +340,8 @@ static esp_err_t httpServerPageHandler(httpd_req_t *req){
 
 	httpPage_t * httpPage = (httpPage_t *) req->user_ctx;
 
-	char outBuffer[HTTP_BUFFER_SIZE];
-
 	if (req->method == HTTP_POST) {
-		httpServerPagePost(req, outBuffer, sizeof(outBuffer));
+		httpServerPagePost(req);
 	}
 
 	if (httpPage->type){

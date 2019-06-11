@@ -112,7 +112,7 @@ void httpServerSSINVSGetFloat(httpd_req_t *req, nvs_handle nvsHandle, char * nvs
 
 	sprintf(strVal, "%.4f", value);
 
-	ESP_ERROR_CHECK_WITHOUT_ABORT(httpd_resp_send_chunk(req, strVal, nvsLength));
+	ESP_ERROR_CHECK_WITHOUT_ABORT(httpd_resp_sendstr_chunk(req, strVal));
 }
 
 void httpServerSSINVSSetString(nvs_handle nvsHandle, char * nvsKey, char * value){
