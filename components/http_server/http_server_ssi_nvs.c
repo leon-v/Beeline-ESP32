@@ -1,6 +1,4 @@
 #include <nvs_flash.h>
-#include <string.h>
-#include <esp_log.h>
 
 #include "http_server.h"
 #include "components.h"
@@ -74,6 +72,7 @@ void httpServerSSINVSGetu8(httpd_req_t *req, nvs_handle nvsHandle, char * nvsKey
 }
 
 void httpServerSSINVSSetu32(nvs_handle nvsHandle, char * nvsKey, char * postValue){
+	ESP_LOGW(TAG, "postValue %s", postValue);
 	ESP_ERROR_CHECK_WITHOUT_ABORT(nvs_set_u32(nvsHandle, nvsKey, atoi(postValue)));
 }
 
@@ -130,6 +129,7 @@ void httpServerSSINVSGetString(httpd_req_t *req, nvs_handle nvsHandle, char * nv
 	espError = nvs_get_str(nvsHandle, nvsKey, strVal, &nvsLength);
 
 	if (espError != ESP_OK) {
+		ESP_LOGW(TAG, "nvsKey: %s", nvsKey);
 		ESP_ERROR_CHECK_WITHOUT_ABORT(espError);
 		return;
 	}

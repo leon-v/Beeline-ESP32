@@ -74,8 +74,8 @@ static esp_err_t mqttConnectionEventHandler(esp_mqtt_event_handle_t event){
 
         case MQTT_EVENT_SUBSCRIBED:
             ESP_LOGI(component.name, "MQTT_EVENT_SUBSCRIBED, msg_id=%d", event->msg_id);
-            msg_id = esp_mqtt_client_publish(client, "/topic/qos0", "data", 0, 0, 0);
-            ESP_LOGI(component.name, "sent publish successful, msg_id=%d", msg_id);
+            // msg_id = esp_mqtt_client_publish(client, "/topic/qos0", "data", 0, 0, 0);
+            // ESP_LOGI(component.name, "sent publish successful, msg_id=%d", msg_id);
 		break;
 
         case MQTT_EVENT_UNSUBSCRIBED:
@@ -83,7 +83,7 @@ static esp_err_t mqttConnectionEventHandler(esp_mqtt_event_handle_t event){
 		break;
 
         case MQTT_EVENT_PUBLISHED:
-            ESP_LOGI(component.name, "MQTT_EVENT_PUBLISHED, msg_id=%d", event->msg_id);
+            // ESP_LOGI(component.name, "MQTT_EVENT_PUBLISHED, msg_id=%d", event->msg_id);
 		break;
 
         case MQTT_EVENT_DATA:

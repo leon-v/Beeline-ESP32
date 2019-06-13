@@ -143,6 +143,11 @@ static void task(void * arg) {
 			continue;
 		}
 
+		// Skip if 0 / disabled
+		if (!timerCount) {
+			continue;
+		}
+
 		if (++count < timerCount) {
 			continue;
 		}

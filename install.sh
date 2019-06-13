@@ -3,6 +3,7 @@
 cd ./esp-idf
 git checkout release/v3.3
 git reset --hard HEAD
+git pull
 cd ..
 
 git submodule update --init --recursive

@@ -16,7 +16,7 @@ Source code from https://github.com/yanbe/ssd1306-esp-idf-i2c
 
 #define TAG "SSD1306"
 
-#define I2C_TIMER 500 / portTICK_RATE_MS
+#define I2C_TIMER 10 / portTICK_RATE_MS
 
 static void ssd1306PinsInit() {
 

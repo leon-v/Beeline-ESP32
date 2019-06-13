@@ -13,9 +13,6 @@ static component_t component = {
 	.priority = 10
 };
 
-#define HTTP_STACK_SIZE 16384
-#define HTTP_BUFFER_SIZE HTTP_STACK_SIZE / 2
-
 httpd_handle_t server = NULL;
 
 #define START_SSI "<!--#"
@@ -118,7 +115,7 @@ static void httpServerURLDecode(char * input, int length) {
     output[0] = '\0';
 }
 
-static char * httpServerParseValues(tokens_t * tokens, char * buffer, const char * rowDelimiter, const char * valueDelimiter, const char * endMatch){
+char * httpServerParseValues(tokens_t * tokens, char * buffer, const char * rowDelimiter, const char * valueDelimiter, const char * endMatch){
 
 	tokens->length = 0;
 
@@ -165,7 +162,7 @@ static char * httpServerParseValues(tokens_t * tokens, char * buffer, const char
 }
 
 
-static char * httpServerGetTokenValue(tokens_t * tokens, const char * key){
+char * httpServerGetTokenValue(tokens_t * tokens, const char * key){
 
 	for (unsigned int index = 0; index < tokens->length; index++){
 
@@ -202,6 +199,10 @@ void httpServerPageReplaceTag(httpd_req_t *req, char * tag) {
 	else if (strcmp(module, "components") == 0){
 		componentsGetHTML(req, ssiTag);
 	}
+	else if (strcmp(module, "get") == 0) {
+		httpSSIGetGet(req, ssiTag);
+	}
+
 
 	else{
 		ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, "Failed to parse module for tag"));
@@ -296,11 +297,12 @@ void httpServerPagePost(httpd_req_t *req){
     }
 
     if (remaining > 0) {
+    	httpd_resp_send_408(req);
     	ESP_LOGE(component.name, "Failed to get POST data");
     	return;
     }
 
-	tokens_t post;
+	static tokens_t post;
 	httpServerParseValues(&post, buffer, "&", "=", "\0");
 
 	for (int tokenIndex = 0; tokenIndex < post.length; tokenIndex++){
@@ -338,6 +340,8 @@ void httpServerPagePost(httpd_req_t *req){
 
 static esp_err_t httpServerPageHandler(httpd_req_t *req){
 
+	ESP_LOGI(component.name, "Start %s", req->uri);
+
 	httpPage_t * httpPage = (httpPage_t *) req->user_ctx;
 
 	if (req->method == HTTP_POST) {
@@ -356,7 +360,11 @@ static esp_err_t httpServerPageHandler(httpd_req_t *req){
 	}
 
 	/* Send empty chunk to signal HTTP response completion */
-    httpd_resp_sendstr_chunk(req, NULL);
+    ESP_ERROR_CHECK_WITHOUT_ABORT(httpd_resp_sendstr_chunk(req, NULL));
+    ESP_ERROR_CHECK_WITHOUT_ABORT(httpd_resp_sendstr_chunk(req, NULL));
+
+    ESP_LOGI(component.name, "End %s", req->uri);
+
     return ESP_OK;
 }
 
@@ -414,7 +422,6 @@ void httpServerFileRegister(const httpFile_t * httpFile){
 static void httpServerStart(void) {
 
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-    config.stack_size = HTTP_STACK_SIZE;
 
     config.max_uri_handlers = 64;
 
@@ -496,6 +503,4 @@ void httpServerInit(void){
 	componentsAdd(&component);
 
 	ESP_LOGI(component.name, "Init");
-
-	// xTaskCreate(&httpServerTask, "http", HTTP_STACK_SIZE, NULL, 14, NULL);
 }

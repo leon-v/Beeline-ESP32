@@ -1,5 +1,7 @@
 #ifndef HTTP_SERVER_H
 
+#include <esp_log.h>
+#include <string.h>
 #include <esp_http_server.h>
 
 typedef struct {
@@ -28,12 +30,18 @@ typedef struct{
 void httpServerInit(void);
 void httpServerAddPage(const httpPage_t * httpPage);
 
+char * httpServerGetTokenValue(tokens_t * tokens, const char * key);
+char * httpServerParseValues(tokens_t * tokens, char * buffer, const char * rowDelimiter, const char * valueDelimiter, const char * endMatch);
+
+
 void httpServerSSIPage(httpd_req_t *req, char * ssiTag);
 
 void httpServerSSINVSGet(httpd_req_t *req, char * ssiTag);
 void httpServerSSINVSSet(char * ssiTag, char * value);
 
 void httpSSIFunctionsGet(httpd_req_t *req, char * ssiTag);
+
+void httpSSIGetGet(httpd_req_t *req, char * ssiTag);
 
 #define MAX_HTTP_SSI_KEY_LENGTH 32
 

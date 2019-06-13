@@ -179,7 +179,7 @@ NEXT_TOKEN:
 	free(display);
 }
 
-static void updateVariable(message_t * message){
+static int updateVariable(message_t * message){
 
 	for (int i = 0; i < messagesLength; i++) {
 
@@ -207,9 +207,13 @@ static void updateVariable(message_t * message){
 						strcpy(displayMessage->stringValue, message->stringValue);
 					break;
 				}
+
+				return 1;
 			}
 		}
 	}
+
+	return 0;
 }
 
 static void task(void * arg) {
@@ -231,9 +235,15 @@ static void task(void * arg) {
 			continue;
 		}
 
-		updateVariable(&message);
+		if (!updateVariable(&message)){
+			// Not one of the variables on the display
+			continue;
+		}
 
 		displayUpdate();
+
+		// Fix errors with too many calls at once.
+		// vTaskDelay(5 / portTICK_RATE_MS);
 	}
 }
 

@@ -198,7 +198,7 @@ static void task(void * arg) {
 		strcat(fullURL, message.deviceName);
 		strcat(fullURL, "/router");
 
-		ESP_LOGI(component.name, "Requesting %s", fullURL);
+		// ESP_LOGI(component.name, "Requesting %s", fullURL);
 
 		static esp_http_client_config_t config = {
 			.url = fullURL,

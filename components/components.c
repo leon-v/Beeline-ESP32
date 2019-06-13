@@ -98,7 +98,7 @@ void componentsInit(void){
 		}
 
 		if (pComponent->messagesIn) {
-			pComponent->messageQueue = xQueueCreate(3, sizeof(message_t));
+			pComponent->messageQueue = xQueueCreate(8, sizeof(message_t));
 		}
 
 		if (pComponent->configPage != NULL){

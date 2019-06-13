@@ -1,45 +1,26 @@
 <!--#page:template_top_html-->
-<h2>Device Configuration</h2>
-<form action="" method="post">
+<h2>ADC Configuration</h2>
 
-	<h2>ADC0</h2>
-	<h3>Wake Timer Multiply</h3>
-	<div class="inputBlock">
-		<div class="input">
-			<input type="number" name="nvs:ADC:u32:adc0TimerCount" value="<!--#nvs:ADC:u32:adc0TimerCount-->" >
-		</div>
-		<p class="info">The amount of times the wake timer event fires before this event is fired.</p>
-	</div>
-
-	<h3>Sensor Name</h3>
-	<div class="inputBlock">
-		<div class="input">
-			<input type="text" name="nvs:ADC:string:adc0Name" value="<!--#nvs:ADC:string:adc0Name-->" >
-		</div>
-		<p class="info">The sensor name to be used in messages.</p>
-	</div>
-
-	<h3>Attenuation</h3>
-	<div class="inputBlock">
-		<div class="input">
-			<select name="nvs:ADC:u8:adc0Atten">
-				<option value="0" <!--#nvs:ADC:u8Selected:adc0Atten:0--> >0db		(0 to 1.1V or 1/1)</option>
-				<option value="1" <!--#nvs:ADC:u8Selected:adc0Atten:1--> >2.5db	(0 to 1.5V or 1/1.34)</option>
-				<option value="2" <!--#nvs:ADC:u8Selected:adc0Atten:2--> >6db		(0 to 2.2V or 1/2)</option>
-				<option value="3" <!--#nvs:ADC:u8Selected:adc0Atten:3--> >11db	(0 to 3.9v or 1/3.6)</option>
+<h3>Select Channel</h3>
+<div class="inputBlock">
+	<div class="input">
+		<form >
+			<select onchange="location.href = this.value">
+				<option> ~ Select Channel to Configure ~ </option>
+				<option value="/adc0_config.html" >ADC0 (<!--#nvs:ADC:string:adc0Name-->)</option>
+				<option value="/adc1_config.html" >ADC1 (<!--#nvs:ADC:string:adc1Name-->)</option>
+				<option value="/adc2_config.html" >ADC2 (<!--#nvs:ADC:string:adc2Name-->)</option>
+				<option value="/adc3_config.html" >ADC3 (<!--#nvs:ADC:string:adc3Name-->)</option>
+				<option value="/adc4_config.html" >ADC4 (<!--#nvs:ADC:string:adc4Name-->)</option>
+				<option value="/adc5_config.html" >ADC5 (<!--#nvs:ADC:string:adc5Name-->)</option>
+				<option value="/adc6_config.html" >ADC6 (<!--#nvs:ADC:string:adc6Name-->)</option>
+				<option value="/adc7_config.html" >ADC7 (<!--#nvs:ADC:string:adc7Name-->)</option>
 			</select>
-		</div>
+		</form>
 	</div>
+</div>
 
-	<h3>Multiplier</h3>
-	<div class="inputBlock">
-		<div class="input">
-			<input type="text" name="nvs:ADC:float:adc0Mul" value="<!--#nvs:ADC:float:adc0Mul-->" >
-		</div>
-		<p class="info">This value is multiplied by the ADC result in millivolts before used in the message.</p>
-	</div>
-
-	<hr>
+<form action="" method="post">
 
 	<h3>Message Routing</h3>
 	<div class="inputBlock">
@@ -48,4 +29,5 @@
 
 	<button>Save Settings</button>
 </form>
+
 <!--#page:template_bottom_html-->

@@ -4,6 +4,8 @@
 #include "components.h"
 #include "device.h"
 
+#define ADC_COUNT ADC1_CHANNEL_MAX
+
 static component_t component = {
 	.name			= "ADC",
 	.messagesOut	= 1
@@ -16,23 +18,66 @@ static const httpPage_t configPage = {
 	.type	= HTTPD_TYPE_TEXT
 };
 
-static uint32_t adc0TimerCount;
-static adc_atten_t adc0Atten;
-static float adc0Mul;
-static char * adc0Name;
+typedef struct {
+	uint32_t timerCount;
+	uint32_t samples;
+	adc_atten_t attenuation;
+	float multiplier;
+	char * name;
+	uint32_t timerCounts; // Not NVS
+} adc_t;
+
+static adc_t adcs[ADC_COUNT];
 
 static void saveNVS(nvs_handle nvsHandle){
-	componentsSetNVSu32(nvsHandle, "adc0TimerCount", adc0TimerCount);
-	componentsSetNVSu8(nvsHandle, "adc0Atten", adc0Atten);
-	componentsSetNVSFloat(nvsHandle, "adc0Mul", adc0Mul);
-	componentsSetNVSString(nvsHandle, adc0Name, "adc0Name");
+
+	for (unsigned char i = 0; i < ADC_COUNT; i++) {
+
+		adc_t * adc = &adcs[i];
+
+		char nvsName[16];
+
+		sprintf(nvsName, "adc%dTimerCount", i);
+		componentsSetNVSu32(nvsHandle, nvsName, adc->timerCount);
+
+		sprintf(nvsName, "adc%dSamples", i);
+		componentsSetNVSu32(nvsHandle, nvsName, adc->samples);
+
+		sprintf(nvsName, "adc%dAtten", i);
+		componentsSetNVSu8(nvsHandle, nvsName, adc->attenuation);
+
+		sprintf(nvsName, "adc%dMul", i);
+		componentsSetNVSFloat(nvsHandle, nvsName, adc->multiplier);
+
+		sprintf(nvsName, "adc%dName", i);
+		componentsSetNVSString(nvsHandle, adc->name, nvsName);
+	}
 }
 
 static void loadNVS(nvs_handle nvsHandle){
-	adc0TimerCount	= componentsGetNVSu32(nvsHandle, "adc0TimerCount", 0);
-	adc0Atten		= componentsGetNVSu8(nvsHandle, "adc0Atten", ADC_ATTEN_DB_11);
-	adc0Mul			= componentsGetNVSFloat(nvsHandle, "adc0Mul", 1);
-	adc0Name		= componentsGetNVSString(nvsHandle, adc0Name, "adc0Name", "ADC0");
+
+	for (unsigned char i = 0; i < ADC_COUNT; i++) {
+
+		adc_t * adc = &adcs[i];
+
+		char nvsName[16];
+
+		sprintf(nvsName, "adc%dTimerCount", i);
+		adc->timerCount = componentsGetNVSu32(nvsHandle, nvsName, 0);
+
+		sprintf(nvsName, "adc%dSamples", i);
+		adc->samples = componentsGetNVSu32(nvsHandle, nvsName, 16);
+
+		sprintf(nvsName, "adc%dAtten", i);
+		adc->attenuation = componentsGetNVSu8(nvsHandle, nvsName, ADC_ATTEN_DB_11);
+
+		sprintf(nvsName, "adc%dMul", i);
+		adc->multiplier = componentsGetNVSFloat(nvsHandle, nvsName, 1);
+
+		sprintf(nvsName, "adc%dName", i);
+		componentsSetNVSString(nvsHandle, adc->name, nvsName);
+		adc->name = componentsGetNVSString(nvsHandle, adc->name, nvsName, nvsName);
+	}
 }
 
 
@@ -72,9 +117,50 @@ static esp_adc_cal_characteristics_t * adGetCharaterization(adc_atten_t adc0Atte
 	}
 }
 
+static const char adc0_config_html_start[] asm("_binary_adc0_config_html_start");
+static const httpPage_t adc0Page = {
+	.uri	= "/adc0_config.html",
+	.page	= adc0_config_html_start,
+	.type	= HTTPD_TYPE_TEXT
+};
+
+static const char adc1_config_html_start[] asm("_binary_adc1_config_html_start");
+static const httpPage_t adc1Page = {
+	.uri	= "/adc1_config.html",
+	.page	= adc1_config_html_start,
+	.type	= HTTPD_TYPE_TEXT
+};
+
+static const char adc2_config_html_start[] asm("_binary_adc2_config_html_start");
+static const httpPage_t adc2Page = {
+	.uri	= "/adc2_config.html",
+	.page	= adc2_config_html_start,
+	.type	= HTTPD_TYPE_TEXT
+};
+
+static const char adc3_config_html_start[] asm("_binary_adc3_config_html_start");
+static const httpPage_t adc3Page = {
+	.uri	= "/adc3_config.html",
+	.page	= adc3_config_html_start,
+	.type	= HTTPD_TYPE_TEXT
+};
+
+static const char adc4_config_html_start[] asm("_binary_adc4_config_html_start");
+static const httpPage_t adc4Page = {
+	.uri	= "/adc4_config.html",
+	.page	= adc4_config_html_start,
+	.type	= HTTPD_TYPE_TEXT
+};
+
 static unsigned char queueItem;
 static void task(void * arg) {
 
+
+	httpServerAddPage(&adc0Page);
+	httpServerAddPage(&adc1Page);
+	httpServerAddPage(&adc2Page);
+	httpServerAddPage(&adc3Page);
+	httpServerAddPage(&adc4Page);
 
 	adcCharacterize(ADC_ATTEN_DB_0		, "0db"		, &adc0dbCharaterization);
 	adcCharacterize(ADC_ATTEN_DB_2_5	, "2.5db"	, &adc2_5dbCharaterization);
@@ -82,11 +168,6 @@ static void task(void * arg) {
 	adcCharacterize(ADC_ATTEN_DB_11		, "11db"	, &adc11dbCharaterization);
 
     static message_t message;
-    int adcRaw;
-
-    int adc0Count = 0;
-
-    esp_adc_cal_characteristics_t * adcCharaterization;
 
 	while (true) {
 
@@ -102,23 +183,49 @@ static void task(void * arg) {
 
 		strcpy(message.deviceName, deviceGetUniqueName());
 
-		if (++adc0Count >= adc0TimerCount) {
-			adc0Count = 0;
+		for (unsigned char i = 0; i < ADC_COUNT; i++) {
+
+			adc_t * adc = &adcs[i];
+
+			// Skip if 0 / disabled
+			if (!adc->timerCount) {
+				continue;
+			}
+
+			if (++adc->timerCounts < adc->timerCount) {
+				continue;
+			}
+
+			adc->timerCounts = 0;
+
+			adc1_channel_t channel = ADC1_CHANNEL_0 + i;
 
 			adc1_config_width(ADC_WIDTH_BIT_12);
-			adc1_config_channel_atten(ADC1_CHANNEL_0, adc0Atten);
-			adcRaw = adc1_get_raw(ADC1_CHANNEL_0);
+			adc1_config_channel_atten(channel, adc->attenuation);
 
-			adcCharaterization = adGetCharaterization(adc0Atten);
-			message.floatValue = esp_adc_cal_raw_to_voltage(adcRaw, adcCharaterization);
-			message.floatValue = message.floatValue * adc0Mul;
+			esp_adc_cal_characteristics_t * adcCharaterization;
+			adcCharaterization = adGetCharaterization(adc->attenuation);
 
-			strcpy(message.sensorName, adc0Name);
+			strcpy(message.sensorName, adc->name);
 			message.valueType = MESSAGE_FLOAT;
+			message.floatValue = 0.00;
+
+			int adcRaw;
+			uint32_t samples = 0;
+			while (++samples < adc->samples) {
+
+				ets_delay_us(2); // Reduces noise on ADC somehow
+				adcRaw = adc1_get_raw(channel);
+
+				message.floatValue+= esp_adc_cal_raw_to_voltage(adcRaw, adcCharaterization);
+			}
+
+			message.floatValue = message.floatValue / samples;
+
+			message.floatValue = message.floatValue * adc->multiplier;
 
 			componentSendMessage(&component, &message);
 		}
-
 	}
 }
 
