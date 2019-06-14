@@ -154,7 +154,7 @@ static void task(void * arg) {
 
 		count = 0;
 
-		ESP_LOGW(component.name, "Got queue item from wake timer");
+		// ESP_LOGW(component.name, "Got queue item from wake timer");
 
 		int loop = samples;
 		int actualSamples = 0;

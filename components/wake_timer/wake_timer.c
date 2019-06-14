@@ -28,11 +28,11 @@ static void task(void * arg) {
 
 	while (true){
 
-		ESP_LOGW(component.name, "Delay %d ms", time);
+		// ESP_LOGW(component.name, "Delay %d ms", time);
 
 		vTaskDelay(time / portTICK_RATE_MS);
 
-		ESP_LOGW(component.name, "Trigger");
+		// ESP_LOGW(component.name, "Trigger");
 
 		componentsQueueSend(&component, &queueItem);
 	}

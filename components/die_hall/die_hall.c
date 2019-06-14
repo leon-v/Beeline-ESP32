@@ -23,7 +23,7 @@ static void saveNVS(nvs_handle nvsHandle){
 }
 
 static void loadNVS(nvs_handle nvsHandle){
-	timerCount =		componentsGetNVSu32(nvsHandle, "timerCount", 1);
+	timerCount =		componentsGetNVSu32(nvsHandle, "timerCount", 0);
 }
 
 static unsigned char queueItem;

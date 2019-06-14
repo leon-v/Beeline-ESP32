@@ -565,7 +565,7 @@ void componentLogMessage(component_t * pComponent, message_t * pMessage, const c
 
 void componentSendMessage(component_t * pComponentFrom, message_t * pMessage) {
 
-	componentLogMessage(pComponentFrom, pMessage, "Forwarding ");
+	// componentLogMessage(pComponentFrom, pMessage, "Forwarding ");
 
 	pComponentFrom->messagesSent++;
 
@@ -595,7 +595,7 @@ void componentSendMessage(component_t * pComponentFrom, message_t * pMessage) {
 			continue;
 		}
 
-		componentLogMessage(pComponentTo, pMessage, "Got ");
+		// componentLogMessage(pComponentTo, pMessage, "Got ");
 
 		xQueueSend(pComponentTo->messageQueue, pMessage, 0);
 	}

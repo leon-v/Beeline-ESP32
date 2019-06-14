@@ -164,6 +164,7 @@ menu "Beeline Components"
 		depends on ELASTIC_COMPONENT_ENABLE
 	endmenu
 
+
 	config RADIO_COMPONENT_ENABLE
 		bool "Enable Radio component"
 		default y

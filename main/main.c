@@ -109,7 +109,7 @@ void app_main() {
 	dieHallInit();
 	#endif
 
-	#ifdef CONFIG_CSR04_COMPONENT_ENABLE
+	#ifdef CONFIG_HCSR04_COMPONENT_ENABLE
 	#include "hcsr04.h"
 	hcsr04Init();
 	#endif
