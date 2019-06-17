@@ -118,7 +118,7 @@ void httpServerSSINVSSetString(nvs_handle nvsHandle, char * nvsKey, char * value
 	ESP_ERROR_CHECK(nvs_set_str(nvsHandle, nvsKey, value));
 }
 
-void httpServerSSINVSGetString(httpd_req_t *req, nvs_handle nvsHandle, char * nvsKey){
+void httpServerSSINVSGetString(httpd_req_t *req, nvs_handle nvsHandle, char * nvsKey) {
 
 	size_t nvsLength = 0;
 

@@ -148,6 +148,7 @@ char * httpServerParseValues(tokens_t * tokens, char * buffer, const char * rowD
 		tokens->tokens[index].key = strtok(tokens->tokens[index].key, valueDelimiter);
 
 		tokens->tokens[index].value = strtok(NULL, valueDelimiter);
+		ESP_LOGW(component.name, "tokens->tokens[index].value %s", tokens->tokens[index].value);
 
 		// If the value is NULL, make it point to an empty string.
 		if (tokens->tokens[index].value == NULL){
@@ -266,22 +267,20 @@ static void httpServerPageGetContent(httpd_req_t *req){
 
 void httpServerPagePost(httpd_req_t *req){
 
-	int remaining = req->content_len;
-
-	if (remaining <= 0) {
+	if (req->content_len <= 0) {
 		ESP_LOGE(component.name, "No POST data");
 		return;
 	}
 
+	char * buffer;
+	buffer = malloc(req->content_len + 1);
+	int bufferLength = 0;
 	int result;
 
-	char * buffer;
-	buffer = malloc(remaining + 1);
-
-	while (remaining > 0) {
+	while (bufferLength < req->content_len) {
 
         /* Read the data for the request */
-        result = httpd_req_recv(req, buffer, remaining);
+        result = httpd_req_recv(req, buffer, req->content_len - bufferLength);
 
         if (result <= 0) {
 
@@ -293,14 +292,18 @@ void httpServerPagePost(httpd_req_t *req){
             break;
         }
 
-        remaining -= result;
+        bufferLength+= result;
+
+        buffer[bufferLength] = '\0';
     }
 
-    if (remaining > 0) {
+    if (bufferLength < req->content_len) {
     	httpd_resp_send_408(req);
     	ESP_LOGE(component.name, "Failed to get POST data");
     	return;
     }
+
+    ESP_LOGW(component.name, "buffer %s", buffer);
 
 	static tokens_t post;
 	httpServerParseValues(&post, buffer, "&", "=", "\0");
