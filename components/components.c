@@ -591,7 +591,7 @@ void componentSendMessage(component_t * pComponentFrom, message_t * pMessage) {
 		pComponentTo->messagesRecieved++;
 
 		if (!uxQueueSpacesAvailable(pComponentTo->messageQueue)) {
-			ESP_LOGE(pComponentTo->name, "No room in message queue for %s", pComponentFrom->name);
+			ESP_LOGE(pComponentTo->name, "No room in message queue for %s", pMessage->sensorname);
 			continue;
 		}
 
