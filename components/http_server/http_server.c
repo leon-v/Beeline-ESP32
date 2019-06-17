@@ -148,7 +148,6 @@ char * httpServerParseValues(tokens_t * tokens, char * buffer, const char * rowD
 		tokens->tokens[index].key = strtok(tokens->tokens[index].key, valueDelimiter);
 
 		tokens->tokens[index].value = strtok(NULL, valueDelimiter);
-		ESP_LOGW(component.name, "tokens->tokens[index].value %s", tokens->tokens[index].value);
 
 		// If the value is NULL, make it point to an empty string.
 		if (tokens->tokens[index].value == NULL){
@@ -302,8 +301,6 @@ void httpServerPagePost(httpd_req_t *req){
     	ESP_LOGE(component.name, "Failed to get POST data");
     	return;
     }
-
-    ESP_LOGW(component.name, "buffer %s", buffer);
 
 	static tokens_t post;
 	httpServerParseValues(&post, buffer, "&", "=", "\0");
