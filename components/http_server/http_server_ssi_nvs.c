@@ -61,12 +61,12 @@ void httpServerSSINVSSetu8(nvs_handle nvsHandle, char * nvsKey, char * postValue
 }
 
 void httpServerSSINVSGetu8(httpd_req_t *req, nvs_handle nvsHandle, char * nvsKey){
-	uint32_t value;
-	char intValStr[8];
 
+	uint8_t value;
 	ESP_ERROR_CHECK_WITHOUT_ABORT(nvs_get_u8(nvsHandle, nvsKey, &value));
 
-	itoa(value, intValStr, 10);
+	char intValStr[16];
+	sprintf(intValStr, "%u", value);
 
 	ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, intValStr));
 }
@@ -77,12 +77,12 @@ void httpServerSSINVSSetu32(nvs_handle nvsHandle, char * nvsKey, char * postValu
 }
 
 void httpServerSSINVSGetu32(httpd_req_t *req, nvs_handle nvsHandle, char * nvsKey){
-	uint32_t value;
-	char intValStr[32];
 
+	uint32_t value;
 	ESP_ERROR_CHECK_WITHOUT_ABORT(nvs_get_u32(nvsHandle, nvsKey, &value));
 
-	itoa(value, intValStr, 10);
+	char intValStr[32];
+	sprintf(intValStr, "%u", value);
 
 	ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, intValStr));
 }
@@ -108,7 +108,6 @@ void httpServerSSINVSGetFloat(httpd_req_t *req, nvs_handle nvsHandle, char * nvs
 	}
 
 	char strVal[32];
-
 	sprintf(strVal, "%.4f", value);
 
 	ESP_ERROR_CHECK_WITHOUT_ABORT(httpd_resp_sendstr_chunk(req, strVal));

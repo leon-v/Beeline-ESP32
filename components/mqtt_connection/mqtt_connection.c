@@ -7,11 +7,12 @@
 static component_t component = {
 	.name			= "MQTT Client",
 	.messagesIn		= 1,
-	.messagesOut	= 1
+	.messagesOut	= 1,
+	.idleTimeout	= 10
 };
 
 static const char config_html_start[] asm("_binary_mqtt_connection_config_html_start");
-static const httpPage_t configPage = {
+static httpPage_t configPage = {
 	.uri	= "/mqtt_connection_config.html",
 	.page	= config_html_start,
 	.type	= HTTPD_TYPE_TEXT
@@ -33,6 +34,8 @@ static void saveNVS(nvs_handle nvsHandle){
 	componentsSetNVSString(nvsHandle, password, "password");
 	componentsSetNVSString(nvsHandle, inTopic, "inTopic");
 	componentsSetNVSString(nvsHandle, outTopic, "outTopic");
+
+	componentsSetNVSu32(nvsHandle, "idleTimeout", component.idleTimeout);
 }
 
 static void loadNVS(nvs_handle nvsHandle){
@@ -43,6 +46,8 @@ static void loadNVS(nvs_handle nvsHandle){
 	password = 	componentsGetNVSString(nvsHandle, password, "password", "");
 	inTopic = 	componentsGetNVSString(nvsHandle, inTopic, "inTopic", "/beeline/out/#");
 	outTopic = 	componentsGetNVSString(nvsHandle, outTopic, "outTopic", "/beeline/in");
+
+	component.idleTimeout =	componentsGetNVSu32(nvsHandle, "idleTimeout", 0);
 }
 
 static esp_err_t mqttConnectionEventHandler(esp_mqtt_event_handle_t event){
@@ -242,7 +247,16 @@ static void task(void * arg) {
 
     	esp_mqtt_client_start(client);
 
-    	while (componentReadyWait(component.name) == ESP_OK) {
+    	while (true) {
+
+    		if (component.taskStste == COMPONENT_TASK_END_REQUEST) {
+    			ESP_LOGW(component.name, "Ending message loop.");
+    			break;
+    		}
+
+    		if (componentReadyWait(component.name) != ESP_OK){
+    			continue;
+    		}
 
     		static message_t message;
     		if (componentMessageRecieve(&component, &message) != ESP_OK) {
@@ -257,9 +271,18 @@ static void task(void * arg) {
     	}
 
 		esp_mqtt_client_stop(client);
+
+		if (component.taskStste == COMPONENT_TASK_END_REQUEST) {
+			ESP_LOGW(component.name, "Ending connection loop.");
+			break;
+		}
 	}
 
+	ESP_LOGW(component.name, "Ending task");
+	component.taskStste = COMPONENT_TASK_ENDED;
+
 	vTaskDelete(NULL);
+
 	return;
 }
 

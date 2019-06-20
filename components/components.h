@@ -5,6 +5,7 @@
 #include <freertos/queue.h>
 #include <freertos/task.h>
 #include <freertos/event_groups.h>
+#include <freertos/timers.h>
 #include <esp_system.h>
 #include <nvs_flash.h>
 #include <esp_log.h>
@@ -15,6 +16,10 @@
 
 #define COMPONENT_READY		BIT0
 #define COMPONENT_NOT_READY	BIT1
+
+#define COMPONENT_TASK_RUNNING		0
+#define COMPONENT_TASK_END_REQUEST	1
+#define COMPONENT_TASK_ENDED		2
 
 typedef struct {
 	const char * name;
@@ -36,6 +41,9 @@ typedef struct {
 	const char * queueRecieveWait;
 	httpPage_t * configPage;
 	httpPage_t * statusPage;
+	char taskStste;
+	uint32_t idleTimeout;
+	TimerHandle_t idleTimer;
 } component_t;
 
 
