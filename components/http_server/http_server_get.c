@@ -24,7 +24,7 @@ void httpSSIGetGet(httpd_req_t *req, char * ssiTag){
 
 	// ESP_LOGW(TAG, "mParams %s", mParams);
 
-	static tokens_t get;
+	tokens_t get;
 	httpServerParseValues(&get, mParams, "&", "=", "\0");
 
 	if (!get.length) {

@@ -215,7 +215,11 @@ static void task(void * arg) {
 
 		ESP_ERROR_CHECK_WITHOUT_ABORT(esp_http_client_set_header(client, "Content-Type", "application/json"));
 
-		ESP_ERROR_CHECK_WITHOUT_ABORT(esp_http_client_perform(client));
+		esp_err_t espError = esp_http_client_perform(client);
+
+		if (espError != ESP_OK) {
+			ESP_LOGE(component.name, "Failed to perform http request. ESP Error %d", espError);
+		}
 
 		esp_http_client_cleanup(client);
 

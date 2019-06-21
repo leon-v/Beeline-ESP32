@@ -7,12 +7,11 @@
 static component_t component = {
 	.name			= "MQTT Client",
 	.messagesIn		= 1,
-	.messagesOut	= 1,
-	.idleTimeout	= 10
+	.messagesOut	= 1
 };
 
 static const char config_html_start[] asm("_binary_mqtt_connection_config_html_start");
-static httpPage_t configPage = {
+static const httpPage_t configPage = {
 	.uri	= "/mqtt_connection_config.html",
 	.page	= config_html_start,
 	.type	= HTTPD_TYPE_TEXT
@@ -125,7 +124,7 @@ static esp_err_t mqttConnectionEventHandler(esp_mqtt_event_handle_t event){
         		break;
         	}
 
-        	static message_t message;
+        	message_t message;
 
         	strcpy(message.deviceName, subTopics[0]);
         	strcpy(message.sensorName, subTopics[1]);
@@ -254,6 +253,8 @@ static void task(void * arg) {
     			break;
     		}
 
+    		componentsUsed(componentsGet("WiFi"));
+
     		if (componentReadyWait(component.name) != ESP_OK){
     			continue;
     		}
@@ -266,8 +267,7 @@ static void task(void * arg) {
     		char * topic = mqttConnectionTopicFromMessage(&message);
     		char * value = mqttConnectionValueFromMessage(&message);
 
-    		int mqttMessageID;
-			mqttMessageID = esp_mqtt_client_publish(client, topic, value, 0, 1, 0);
+			esp_mqtt_client_publish(client, topic, value, 0, 1, 0);
     	}
 
 		esp_mqtt_client_stop(client);

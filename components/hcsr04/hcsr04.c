@@ -33,7 +33,7 @@ static void saveNVS(nvs_handle nvsHandle){
 }
 
 static void loadNVS(nvs_handle nvsHandle){
-	timerCount =	componentsGetNVSu32(nvsHandle, "timerCount"	, 1);
+	timerCount =	componentsGetNVSu32(nvsHandle, "timerCount"	, 0);
 	samples =		componentsGetNVSu32(nvsHandle, "samples"	, 50);
 	required =		componentsGetNVSu32(nvsHandle, "required"	, 20);
 	delay =			componentsGetNVSu32(nvsHandle, "delay"		, 20);

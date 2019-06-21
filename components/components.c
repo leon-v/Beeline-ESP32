@@ -40,7 +40,7 @@ void componentsAdd(component_t * pComponent){
 	ESP_LOGI(pComponent->name, "Add");
 }
 
-void componentsLoadNVS(component_t * pComponent){
+void componentsLoadNVS(component_t * pComponent) {
 
 	if (!pComponent){
 		ESP_LOGE(TAG, "Component passed is not valid");
@@ -82,9 +82,11 @@ void componentsLoadNVS(component_t * pComponent){
 
 	if ( (pComponent->idleTimeout) && (pComponent->idleTimer) ) {
 
-		ESP_LOGE(pComponent->name, "Updating timer period to %u", pComponent->idleTimeout);
-
-		if (xTimerChangePeriod(pComponent->idleTimer, pComponent->idleTimeout, 0) != pdPASS) {
+		if (xTimerChangePeriod(
+				pComponent->idleTimer,
+				(pComponent->idleTimeout * 1000) / portTICK_RATE_MS,
+				0
+			) != pdPASS) {
 			ESP_LOGE(pComponent->name, "Failed to re-set timer period");
 		}
 	}
@@ -144,7 +146,7 @@ void componentsInit(void){
 				componentsTimerAlarm
 			);
 
-			ESP_LOGI(pComponent->name, "Starting idle timer");
+			ESP_LOGI(pComponent->name, "Starting idle timer with a timeout of %u seconds.", pComponent->idleTimeout);
 
 			if (xTimerStart(pComponent->idleTimer, 0) != pdPASS) {
 				ESP_LOGE(pComponent->name, "Timer start error");
@@ -173,7 +175,7 @@ void componentsStartTask(component_t * pComponent) {
 		pComponent->task,
 		pComponent->name,
 		pComponent->tasStackDepth,
-		NULL,
+		pComponent->taskArg,
 		5 + pComponent->priority,
 		NULL
 	);
@@ -181,13 +183,14 @@ void componentsStartTask(component_t * pComponent) {
 	pComponent->taskStste = COMPONENT_TASK_RUNNING;
 }
 
+
 void componentsUsed(component_t * pComponent) {
 
 	if (!pComponent->idleTimer) {
 		return;
 	}
 
-	ESP_LOGE(pComponent->name, "Used %u", pComponent->taskStste);
+	ESP_LOGW(pComponent->name, "Used, Timer reset");
 
 	if (xTimerReset(pComponent->idleTimer, 0) != pdPASS) {
 		ESP_LOGE(pComponent->name, "Timer reset error");

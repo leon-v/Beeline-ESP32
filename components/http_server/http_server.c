@@ -19,35 +19,35 @@ httpd_handle_t server = NULL;
 #define END_SSI "-->"
 
 static const char index_html_start[] asm("_binary_index_html_start");
-const httpPage_t httpPageIndexHTML = {
+static const httpPage_t httpPageIndexHTML = {
 	.uri	= "/",
 	.page	= index_html_start,
 	.type	= HTTPD_TYPE_TEXT
 };
 
 static const char menu_html_start[] asm("_binary_menu_html_start");
-const httpPage_t httpPageMenuHTML = {
+static const httpPage_t httpPageMenuHTML = {
 	.uri	= "/menu.html",
 	.page	= menu_html_start,
 	.type	= HTTPD_TYPE_TEXT
 };
 
 static const char menu_css_start[] asm("_binary_menu_css_start");
-const httpPage_t httpPageMenuCSS = {
+static const httpPage_t httpPageMenuCSS = {
 	.uri	= "/menu.css",
 	.page	= menu_css_start,
 	.type	= "text/css"
 };
 
 static const char style_css_start[] asm("_binary_style_css_start");
-const httpPage_t httpPageStyleCSS = {
+static const httpPage_t httpPageStyleCSS = {
 	.uri	= "/style.css",
 	.page	= style_css_start,
 	.type	= "text/css"
 };
 
 static const char javascript_js_start[] asm("_binary_javascript_js_start");
-const httpPage_t httpPageJavascriptJS = {
+static const httpPage_t httpPageJavascriptJS = {
 	.uri	= "/javascript.js",
 	.page	= javascript_js_start,
 	.type	= "application/javascript"
@@ -55,7 +55,7 @@ const httpPage_t httpPageJavascriptJS = {
 
 static const char favicon_png_start[]	asm("_binary_favicon_png_start");
 static const char favicon_png_end[]		asm("_binary_favicon_png_end");
-httpFile_t httpFileFaviconPNG = {
+static httpFile_t httpFileFaviconPNG = {
 	.uri	= "/favicon.png",
 	.start	= favicon_png_start,
 	.end	= favicon_png_end,
@@ -63,7 +63,7 @@ httpFile_t httpFileFaviconPNG = {
 };
 
 
-httpPage_t * httpPages[32];
+const httpPage_t * httpPages[32];
 unsigned char httpPagesLength = 0;
 
 httpFile_t * httpFiles[4];
@@ -74,7 +74,7 @@ void httpServerAddPage(const httpPage_t * httpPage){
 	httpPagesLength++;
 }
 
-void httpServerAddFile(const httpFile_t * httpFile){
+void httpServerAddFile(httpFile_t * httpFile){
 	httpFiles[httpFilesLength] = httpFile;
 	httpFilesLength++;
 }
@@ -177,10 +177,9 @@ char * httpServerGetTokenValue(tokens_t * tokens, const char * key){
 void httpServerPageReplaceTag(httpd_req_t *req, char * tag) {
 
 	char * module = strtok(tag, ":");
-	char * error = NULL;
 
 	if (!module){
-		ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, "Failed to get module from tag"));
+		ESP_ERROR_CHECK_WITHOUT_ABORT(httpd_resp_sendstr_chunk(req, "Failed to get module from tag"));
 	}
 
 	char * ssiTag = strtok(NULL, "");
@@ -205,20 +204,20 @@ void httpServerPageReplaceTag(httpd_req_t *req, char * tag) {
 
 
 	else{
-		ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, "Failed to parse module for tag"));
+		ESP_ERROR_CHECK_WITHOUT_ABORT(httpd_resp_sendstr_chunk(req, "Failed to parse module for tag"));
 	}
 }
 static void httpServerPageGetContent(httpd_req_t *req){
 
-	httpPage_t * httpPage = (httpPage_t *) req->user_ctx;
+	const httpPage_t * httpPage = (httpPage_t *) req->user_ctx;
 
-	char * tagEndHTMLStart = httpPage->page;
-	char * tagStartHTMLEnd = strstr(tagEndHTMLStart, START_SSI);
+	const char * tagEndHTMLStart = httpPage->page;
+	const char * tagStartHTMLEnd = strstr(tagEndHTMLStart, START_SSI);
 
 	int length;
 
 	if (!tagStartHTMLEnd){
-		ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, tagEndHTMLStart));
+		ESP_ERROR_CHECK_WITHOUT_ABORT(httpd_resp_sendstr_chunk(req, tagEndHTMLStart));
 		return;
 	}
 
@@ -228,7 +227,7 @@ static void httpServerPageGetContent(httpd_req_t *req){
 		length = tagStartHTMLEnd - tagEndHTMLStart;
 
 		if (length > 0){
-			ESP_ERROR_CHECK(httpd_resp_send_chunk(req, tagEndHTMLStart, length));
+			ESP_ERROR_CHECK_WITHOUT_ABORT(httpd_resp_send_chunk(req, tagEndHTMLStart, length));
 		}
 
 		tagStartHTMLEnd+= strlen(START_SSI);
@@ -260,7 +259,7 @@ static void httpServerPageGetContent(httpd_req_t *req){
 
 	length = tagStartHTMLEnd - tagEndHTMLStart;
 	if (length > 0){
-		ESP_ERROR_CHECK(httpd_resp_send_chunk(req, tagEndHTMLStart, length));
+		ESP_ERROR_CHECK_WITHOUT_ABORT(httpd_resp_send_chunk(req, tagEndHTMLStart, length));
 	}
 }
 
@@ -302,7 +301,7 @@ void httpServerPagePost(httpd_req_t *req){
     	return;
     }
 
-	static tokens_t post;
+	tokens_t post;
 	httpServerParseValues(&post, buffer, "&", "=", "\0");
 
 	for (int tokenIndex = 0; tokenIndex < post.length; tokenIndex++){
@@ -340,30 +339,29 @@ void httpServerPagePost(httpd_req_t *req){
 
 static esp_err_t httpServerPageHandler(httpd_req_t *req){
 
-	ESP_LOGI(component.name, "Start %s", req->uri);
+	// ESP_LOGI(component.name, "Start %s", req->uri);
 
-	httpPage_t * httpPage = (httpPage_t *) req->user_ctx;
-
-	if (req->method == HTTP_POST) {
-		httpServerPagePost(req);
-	}
+	const httpPage_t * httpPage = (httpPage_t *) req->user_ctx;
 
 	if (httpPage->type){
 		httpd_resp_set_type(req, httpPage->type);
+	}
+
+	if (req->method == HTTP_POST) {
+		httpServerPagePost(req);
 	}
 
 	if (httpPage->page){
 		httpServerPageGetContent(req);
 	}
 	else{
-		ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, "Nothing found to populate content."));
+		ESP_ERROR_CHECK_WITHOUT_ABORT(httpd_resp_sendstr_chunk(req, "Nothing found to populate content."));
 	}
 
 	/* Send empty chunk to signal HTTP response completion */
     ESP_ERROR_CHECK_WITHOUT_ABORT(httpd_resp_sendstr_chunk(req, NULL));
-    ESP_ERROR_CHECK_WITHOUT_ABORT(httpd_resp_sendstr_chunk(req, NULL));
 
-    ESP_LOGI(component.name, "End %s", req->uri);
+    // ESP_LOGI(component.name, "End %s", req->uri);
 
     return ESP_OK;
 }
@@ -386,7 +384,7 @@ void httpServerPageRegister(const httpPage_t * httpPage){
 	    .uri      	= httpPage->uri,
 	    .method   	= HTTP_GET,
 	    .handler  	= httpServerPageHandler,
-	    .user_ctx	= httpPage,
+	    .user_ctx	= (void *) httpPage,
 	};
 
 	httpd_register_uri_handler(server, &getURI);
@@ -394,10 +392,10 @@ void httpServerPageRegister(const httpPage_t * httpPage){
 	ESP_LOGI(component.name, "Registered %s for GET", getURI.uri);
 
 	httpd_uri_t postURI = {
-	    .uri      = httpPage->uri,
-	    .method   = HTTP_POST,
-	    .handler  = httpServerPageHandler,
-	    .user_ctx	= httpPage,
+	    .uri		= httpPage->uri,
+	    .method		= HTTP_POST,
+	    .handler	= httpServerPageHandler,
+	    .user_ctx	= (void *) httpPage,
 	};
 
 	httpd_register_uri_handler(server, &postURI);
@@ -405,7 +403,7 @@ void httpServerPageRegister(const httpPage_t * httpPage){
 	ESP_LOGI(component.name, "Registered %s for POST", getURI.uri);
 }
 
-void httpServerFileRegister(const httpFile_t * httpFile){
+void httpServerFileRegister(httpFile_t * httpFile){
 
 	httpd_uri_t getURI = {
 	    .uri      	= httpFile->uri,
@@ -435,7 +433,7 @@ static void httpServerStart(void) {
         int i;
         for (i = 0; i < httpPagesLength; i++){
 
-        	httpPage_t * httpPage = httpPages[i];
+        	const httpPage_t * httpPage = httpPages[i];
         	httpServerPageRegister(httpPage);
         }
 
@@ -460,8 +458,6 @@ void httpServerStop(void) {
 }
 
 static void task(void *arg){
-
-	EventBits_t EventBits;
 
 	componentSetReady(&component);
 

@@ -75,7 +75,6 @@ static void loadNVS(nvs_handle nvsHandle){
 		adc->multiplier = componentsGetNVSFloat(nvsHandle, nvsName, 1);
 
 		sprintf(nvsName, "adc%dName", i);
-		componentsSetNVSString(nvsHandle, adc->name, nvsName);
 		adc->name = componentsGetNVSString(nvsHandle, adc->name, nvsName, nvsName);
 	}
 }

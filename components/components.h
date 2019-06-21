@@ -30,6 +30,7 @@ typedef struct {
 	unsigned int messagesRecieved;
 	xQueueHandle messageQueue;
 	void (* task)(void *);
+	void * taskArg;
 	uint32_t tasStackDepth;
 	unsigned int priority; // 0 to 10;
 	void (* loadNVS)(nvs_handle nvsHandle);
@@ -39,8 +40,8 @@ typedef struct {
 	unsigned int queueItemLength;
 	unsigned int queueLength;
 	const char * queueRecieveWait;
-	httpPage_t * configPage;
-	httpPage_t * statusPage;
+	const httpPage_t * configPage;
+	const httpPage_t * statusPage;
 	char taskStste;
 	uint32_t idleTimeout;
 	TimerHandle_t idleTimer;
@@ -77,6 +78,8 @@ component_t * componentsGet(const char * name);
 
 esp_err_t componentReadyWait(const char * name);
 esp_err_t componentNotReadyWait(const char * name);
+
+void componentsUsed(component_t * pComponent);
 
 void componentSetReady(component_t * component);
 void componentSetNotReady(component_t * component);

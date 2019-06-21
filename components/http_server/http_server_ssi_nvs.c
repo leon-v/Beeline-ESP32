@@ -34,7 +34,7 @@ void httpServerSSINVSGetBit(httpd_req_t *req, nvs_handle nvsHandle, char * nvsKe
 		strcpy(intValStr, "0");
 	}
 
-	ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, intValStr));
+	ESP_ERROR_CHECK_WITHOUT_ABORT(httpd_resp_sendstr_chunk(req, intValStr));
 }
 
 void httpServerSSINVSGetChecked(httpd_req_t *req, nvs_handle nvsHandle, char * nvsKey, int bit){
@@ -42,7 +42,7 @@ void httpServerSSINVSGetChecked(httpd_req_t *req, nvs_handle nvsHandle, char * n
 	ESP_ERROR_CHECK_WITHOUT_ABORT(nvs_get_u64(nvsHandle, nvsKey, &value));
 
 	if ((value >> bit) & 0x01) {
-		ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, "checked"));
+		ESP_ERROR_CHECK_WITHOUT_ABORT(httpd_resp_sendstr_chunk(req, "checked"));
 	}
 }
 
@@ -52,7 +52,7 @@ void httpServerSSINVSGetu8Selected(httpd_req_t *req, nvs_handle nvsHandle, char 
 	ESP_ERROR_CHECK_WITHOUT_ABORT(nvs_get_u8(nvsHandle, nvsKey, &value));
 
 	if (match == value) {
-		ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, "selected"));
+		ESP_ERROR_CHECK_WITHOUT_ABORT(httpd_resp_sendstr_chunk(req, "selected"));
 	}
 }
 
@@ -68,11 +68,10 @@ void httpServerSSINVSGetu8(httpd_req_t *req, nvs_handle nvsHandle, char * nvsKey
 	char intValStr[16];
 	sprintf(intValStr, "%u", value);
 
-	ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, intValStr));
+	ESP_ERROR_CHECK_WITHOUT_ABORT(httpd_resp_sendstr_chunk(req, intValStr));
 }
 
 void httpServerSSINVSSetu32(nvs_handle nvsHandle, char * nvsKey, char * postValue){
-	ESP_LOGW(TAG, "postValue %s", postValue);
 	ESP_ERROR_CHECK_WITHOUT_ABORT(nvs_set_u32(nvsHandle, nvsKey, atoi(postValue)));
 }
 
@@ -84,7 +83,7 @@ void httpServerSSINVSGetu32(httpd_req_t *req, nvs_handle nvsHandle, char * nvsKe
 	char intValStr[32];
 	sprintf(intValStr, "%u", value);
 
-	ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, intValStr));
+	ESP_ERROR_CHECK_WITHOUT_ABORT(httpd_resp_sendstr_chunk(req, intValStr));
 }
 
 void httpServerSSINVSSetFloat(nvs_handle nvsHandle, char * nvsKey, char * postValue) {
@@ -149,7 +148,9 @@ void httpServerSSINVSGetString(httpd_req_t *req, nvs_handle nvsHandle, char * nv
 
 	nvsLength--;
 
-	ESP_ERROR_CHECK_WITHOUT_ABORT(httpd_resp_send_chunk(req, strVal, nvsLength));
+	if (strlen(strVal)) {
+		ESP_ERROR_CHECK_WITHOUT_ABORT(httpd_resp_send_chunk(req, strVal, nvsLength));
+	}
 
 	free(strVal);
 }
@@ -159,19 +160,19 @@ void httpServerSSINVSGet(httpd_req_t *req, char * ssiTag){
 	char * nvsName = strtok(ssiTag, ":");
 	esp_err_t espError;
 	if (!nvsName) {
-		ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, "Missing NVS name"));
+		ESP_ERROR_CHECK_WITHOUT_ABORT(httpd_resp_sendstr_chunk(req, "Missing NVS name"));
 		return;
 	}
 
 	char * nvsType = strtok(NULL, ":");
 	if (!nvsType) {
-		ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, "Missing NVS type"));
+		ESP_ERROR_CHECK_WITHOUT_ABORT(httpd_resp_sendstr_chunk(req, "Missing NVS type"));
 		return;
 	}
 
 	char * nvsKey = strtok(NULL, ":");
 	if (!nvsKey) {
-		ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, "Missing NVS key"));
+		ESP_ERROR_CHECK_WITHOUT_ABORT(httpd_resp_sendstr_chunk(req, "Missing NVS key"));
 		return;
 	}
 
@@ -211,7 +212,7 @@ void httpServerSSINVSGet(httpd_req_t *req, char * ssiTag){
 	}
 	else{
 		ESP_LOGE(TAG, "Failed to parse NVS type: %s", nvsType);
-		ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, "Failed to parse NVS type"));
+		ESP_ERROR_CHECK_WITHOUT_ABORT(httpd_resp_sendstr_chunk(req, "Failed to parse NVS type"));
 	}
 
 	nvs_close(nvsHandle);
