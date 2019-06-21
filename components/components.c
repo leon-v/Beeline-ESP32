@@ -32,8 +32,6 @@ void componentsRemove(const char * name) {
 }
 void componentsAdd(component_t * pComponent){
 
-	pComponent->taskStste = COMPONENT_TASK_ENDED;
-
 	components[componentsLength] = pComponent;
 	componentsLength++;
 
@@ -97,14 +95,37 @@ void componentsTimerAlarm(TimerHandle_t xTimer) {
 
 	component_t * pComponent = (component_t *) pvTimerGetTimerID(xTimer);
 
-	ESP_LOGW(pComponent->name, "Requesting task to end due to idle");
+	ESP_LOGW(pComponent->name, "Idle time expired");
 
-	if (pComponent->taskStste == COMPONENT_TASK_RUNNING) {
-		pComponent->taskStste = COMPONENT_TASK_END_REQUEST;
+	EventBits_t eventBits = xEventGroupGetBits(pComponent->eventGroup);
+
+	if (eventBits & COMPONENT_TASK_RUNNING) {
+		ESP_LOGW(pComponent->name, "Requesting task to end due to idle");
+
+		xEventGroupClearBits(pComponent->eventGroup, COMPONENT_TASK_RUNNING);
+		xEventGroupSetBits(pComponent->eventGroup, COMPONENT_TASK_END_REQUEST);
+		xEventGroupClearBits(pComponent->eventGroup, COMPONENT_TASK_ENDED);
 	}
 }
 
-void componentsInit(void){
+esp_err_t componentsEndRequested(component_t * pComponent) {
+
+	EventBits_t eventBits = xEventGroupGetBits(pComponent->eventGroup);
+
+	if (eventBits & COMPONENT_TASK_END_REQUEST) {
+		return ESP_OK;
+	}
+
+	return ESP_FAIL;
+}
+
+void componentsSetEnded(component_t * pComponent) {
+	xEventGroupClearBits(pComponent->eventGroup, COMPONENT_TASK_RUNNING);
+	xEventGroupClearBits(pComponent->eventGroup, COMPONENT_TASK_END_REQUEST);
+	xEventGroupSetBits(pComponent->eventGroup, COMPONENT_TASK_ENDED);
+}
+
+void componentsInit(void) {
 
 	printf("componentsInit\n");
 
@@ -117,6 +138,8 @@ void componentsInit(void){
 
 		xEventGroupClearBits(pComponent->eventGroup, COMPONENT_READY);
 		xEventGroupSetBits(pComponent->eventGroup, COMPONENT_NOT_READY);
+
+		componentsSetEnded(pComponent);
 
 		if ( (pComponent->queueItemLength) && (pComponent->queueLength) ) {
 			pComponent->queue = xQueueCreate(pComponent->queueLength, pComponent->queueItemLength);
@@ -163,7 +186,9 @@ void componentsStartTask(component_t * pComponent) {
 		return;
 	}
 
-	if (pComponent->taskStste != COMPONENT_TASK_ENDED) {
+	EventBits_t eventBits = xEventGroupGetBits(pComponent->eventGroup);
+
+	if (!(eventBits & COMPONENT_TASK_ENDED)) {
 		return;
 	}
 
@@ -180,9 +205,10 @@ void componentsStartTask(component_t * pComponent) {
 		NULL
 	);
 
-	pComponent->taskStste = COMPONENT_TASK_RUNNING;
+	xEventGroupSetBits(pComponent->eventGroup, COMPONENT_TASK_RUNNING);
+	xEventGroupClearBits(pComponent->eventGroup, COMPONENT_TASK_END_REQUEST);
+	xEventGroupClearBits(pComponent->eventGroup, COMPONENT_TASK_ENDED);
 }
-
 
 void componentsUsed(component_t * pComponent) {
 
@@ -196,7 +222,9 @@ void componentsUsed(component_t * pComponent) {
 		ESP_LOGE(pComponent->name, "Timer reset error");
 	}
 
-	if (pComponent->taskStste == COMPONENT_TASK_ENDED){
+	EventBits_t eventBits = xEventGroupGetBits(pComponent->eventGroup);
+
+	if (eventBits & COMPONENT_TASK_ENDED) {
 		ESP_LOGW(pComponent->name, "Restarting task");
 		componentsStartTask(pComponent);
 	}

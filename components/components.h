@@ -14,12 +14,11 @@
 
 #include "./http_server/http_server.h"
 
-#define COMPONENT_READY		BIT0
-#define COMPONENT_NOT_READY	BIT1
-
-#define COMPONENT_TASK_RUNNING		0
-#define COMPONENT_TASK_END_REQUEST	1
-#define COMPONENT_TASK_ENDED		2
+#define COMPONENT_READY				BIT0
+#define COMPONENT_NOT_READY			BIT1
+#define COMPONENT_TASK_RUNNING		BIT2
+#define COMPONENT_TASK_END_REQUEST	BIT3
+#define COMPONENT_TASK_ENDED		BIT4
 
 typedef struct {
 	const char * name;
@@ -42,7 +41,6 @@ typedef struct {
 	const char * queueRecieveWait;
 	const httpPage_t * configPage;
 	const httpPage_t * statusPage;
-	char taskStste;
 	uint32_t idleTimeout;
 	TimerHandle_t idleTimer;
 } component_t;
@@ -80,6 +78,9 @@ esp_err_t componentReadyWait(const char * name);
 esp_err_t componentNotReadyWait(const char * name);
 
 void componentsUsed(component_t * pComponent);
+
+void componentsSetEnded(component_t * pComponent);
+esp_err_t componentsEndRequested(component_t * pComponent);
 
 void componentSetReady(component_t * component);
 void componentSetNotReady(component_t * component);

@@ -248,12 +248,12 @@ static void task(void * arg) {
 
     	while (true) {
 
-    		if (component.taskStste == COMPONENT_TASK_END_REQUEST) {
+    		componentsUsed(componentsGet("WiFi"));
+
+    		if (componentsEndRequested(&component) == ESP_OK) {
     			ESP_LOGW(component.name, "Ending message loop.");
     			break;
     		}
-
-    		componentsUsed(componentsGet("WiFi"));
 
     		if (componentReadyWait(component.name) != ESP_OK){
     			continue;
@@ -272,14 +272,15 @@ static void task(void * arg) {
 
 		esp_mqtt_client_stop(client);
 
-		if (component.taskStste == COMPONENT_TASK_END_REQUEST) {
+		if (componentsEndRequested(&component) == ESP_OK) {
 			ESP_LOGW(component.name, "Ending connection loop.");
 			break;
 		}
 	}
 
 	ESP_LOGW(component.name, "Ending task");
-	component.taskStste = COMPONENT_TASK_ENDED;
+
+	componentsSetEnded(&component);
 
 	vTaskDelete(NULL);
 

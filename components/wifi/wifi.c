@@ -28,11 +28,15 @@ static wifi_config_t wifiConfig;
 static void saveNVS(nvs_handle nvsHandle) {
 	componentsSetNVSString(nvsHandle, ssid, "ssid");
 	componentsSetNVSString(nvsHandle, password, "password");
+
+	componentsSetNVSu32(nvsHandle, "idleTimeout", component.idleTimeout);
 }
 
 static void loadNVS(nvs_handle nvsHandle){
 	ssid = componentsGetNVSString(nvsHandle, ssid, "ssid", "SSID");
 	password = componentsGetNVSString(nvsHandle, password, "password", "Password");
+
+	component.idleTimeout =	componentsGetNVSu32(nvsHandle, "idleTimeout", 0);
 
 	resetConfig = 1;
 }
@@ -145,6 +149,11 @@ static void task(void * arg) {
 
 	while(true) {
 
+		if (componentsEndRequested(&component) == ESP_OK) {
+			ESP_LOGW(component.name, "Ending loop.");
+			break;
+		}
+
 		vTaskDelay(60000 / portTICK_RATE_MS);
 
 		if (resetConfig == 1) {
@@ -152,6 +161,16 @@ static void task(void * arg) {
 			wifiClientInit();
 		}
 	}
+
+	ESP_LOGW(component.name, "Ending task");
+
+	esp_wifi_stop();
+
+	componentsSetEnded(&component);
+
+	vTaskDelete(NULL);
+
+	return;
 }
 
 void wiFiInit(int * pAPMode) {

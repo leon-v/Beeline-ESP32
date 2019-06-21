@@ -127,6 +127,11 @@ static void task(void * arg) {
 
 	while (true){
 
+		static message_t message;
+    	if (componentMessageRecieve(&component, &message) != ESP_OK) {
+    		continue;
+    	}
+
 		if (componentReadyWait("WiFi") != ESP_OK) {
 			continue;
 		}
@@ -134,11 +139,6 @@ static void task(void * arg) {
 		if (componentReadyWait("Date Time") != ESP_OK) {
 			continue;
 		}
-
-		static message_t message;
-    	if (componentMessageRecieve(&component, &message) != ESP_OK) {
-    		continue;
-    	}
 
 		static cJSON * request;
 		request = cJSON_CreateObject();
