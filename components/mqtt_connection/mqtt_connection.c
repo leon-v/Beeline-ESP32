@@ -276,6 +276,8 @@ static void task(void * arg) {
 
 		esp_mqtt_client_stop(client);
 
+		esp_mqtt_client_destroy(client);
+
 		if (componentsEndRequested(&component) == ESP_OK) {
 			ESP_LOGW(component.name, "Ending connection loop.");
 			break;
