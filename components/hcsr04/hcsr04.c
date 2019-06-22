@@ -26,6 +26,7 @@ static uint32_t samples;
 static uint32_t required;
 static uint32_t delay;
 
+static xQueueHandle timerQueue;
 
 static void saveNVS(nvs_handle nvsHandle){
 	componentsSetNVSu32(nvsHandle, "timerCount"	, timerCount);
@@ -52,7 +53,7 @@ void IRAM_ATTR hcsr04TimerISR(void * arg){
 
 	uint64_t timerTicks = 0;
 
-	xQueueSendFromISR(component.queue, &timerTicks, NULL);
+	xQueueSendFromISR(timerQueue, &timerTicks, NULL);
 }
 
 static unsigned int echoChangeCount = 0;
@@ -77,11 +78,11 @@ void IRAM_ATTR hcsr04EchoISR(void * arg){
 		uint64_t timerTicks;
 		timer_get_counter_value(TIMER_GROUP_0, TIMER_0, &timerTicks);
 
-		xQueueSendFromISR(component.queue, &timerTicks, NULL);
+		xQueueSendFromISR(timerQueue, &timerTicks, NULL);
 	}
 }
 
-#define POWER_UP_DELAY 200
+#define POWER_UP_DELAY 300
 
 void hcsr04Enable(void){
 
@@ -89,28 +90,12 @@ void hcsr04Enable(void){
 
 	vTaskDelay(POWER_UP_DELAY / portTICK_RATE_MS);
 
-	// Setup GPIO for echo pin
-	gpio_config_t io_conf;
-	io_conf.pull_down_en = 0;
-    io_conf.pull_up_en = 0;
-    io_conf.intr_type = GPIO_INTR_ANYEDGE;
-    io_conf.mode = GPIO_MODE_INPUT;
-    io_conf.pin_bit_mask = (0x01 << CONFIG_HCSR04_ECHO_PIN);
-    gpio_config(&io_conf);
+	gpio_intr_enable(CONFIG_HCSR04_ECHO_PIN);
 }
 
 void hcsr04Disable(void){
 
-	// Setup GPIO for echo pin
-	gpio_config_t io_conf;
-	io_conf.pull_down_en = 0;
-    io_conf.pull_up_en = 0;
-    io_conf.intr_type = GPIO_INTR_DISABLE;
-    io_conf.mode = GPIO_MODE_INPUT;
-    io_conf.pin_bit_mask = (0x01 << CONFIG_HCSR04_ECHO_PIN);
-    gpio_config(&io_conf);
-
-    vTaskDelay(POWER_UP_DELAY / portTICK_RATE_MS);
+	gpio_intr_disable(CONFIG_HCSR04_ECHO_PIN);
 
 	gpio_set_level(POWER_ENABLE_PIN, 0);
 }
@@ -138,6 +123,14 @@ static void task(void * arg) {
 	io_conf.pull_down_en = 0;
     io_conf.pull_up_en = 0;
 
+
+    // Setup GPIO for echo pin
+    io_conf.intr_type = GPIO_INTR_ANYEDGE;
+    io_conf.mode = GPIO_MODE_INPUT;
+    io_conf.pin_bit_mask = (0x01 << CONFIG_HCSR04_ECHO_PIN);
+    gpio_config(&io_conf);
+
+    gpio_intr_disable(CONFIG_HCSR04_ECHO_PIN);
 
     // Attach the ISR to the GPIO interrupt
     gpio_isr_handler_add(CONFIG_HCSR04_ECHO_PIN, hcsr04EchoISR, (void*) CONFIG_HCSR04_ECHO_PIN);
@@ -236,7 +229,7 @@ static void task(void * arg) {
 
 			hcsr04Trigger();
 
-			if (!xQueueReceive(component.queue, &timerTicks, 20 / portTICK_RATE_MS)) {
+			if (!xQueueReceive(timerQueue, &timerTicks, 20 / portTICK_RATE_MS)) {
 				// ESP_LOGE(component.name, " No response from module");
 				continue;
 			}
@@ -277,6 +270,8 @@ static void task(void * arg) {
 
 
 void hcsr04Init(void) {
+
+	timerQueue = xQueueCreate(1, sizeof(uint64_t));
 
 	component.configPage		= &configPage;
 	component.task				= &task;

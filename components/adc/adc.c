@@ -224,14 +224,17 @@ static void task(void * arg) {
 			message.floatValue = 0.00;
 
 			int adcRaw;
-			uint32_t samples = 0;
-			while (++samples < adc->samples) {
+			int samples = 0;
+			while (samples < adc->samples) {
 
 				ets_delay_us(2); // Reduces noise on ADC somehow
 				adcRaw = adc1_get_raw(channel);
 
 				message.floatValue+= esp_adc_cal_raw_to_voltage(adcRaw, adcCharaterization);
+
+				samples++;
 			}
+
 
 			message.floatValue = message.floatValue / samples;
 

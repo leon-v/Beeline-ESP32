@@ -492,19 +492,19 @@ static void task(void *arg){
 			break;
 		}
 
-		if (componentReadyWait("WiFi") == ESP_OK) {
-			/* Start the web server */
-	        if (server == NULL) {
-	        	ESP_LOGI(component.name, "Start");
+		if (server == NULL) {
+			if (componentReadyWait("WiFi") == ESP_OK) {
+				ESP_LOGI(component.name, "Start");
 	        	httpServerStart();
-	        }
+			}
+
 		}
 
-		if (componentNotReadyWait("WiFi") == ESP_OK) {
-			if (server) {
+		else {
+			if (componentNotReadyWait("WiFi") == ESP_OK) {
 				ESP_LOGI(component.name, "Stop");
-	            httpServerStop();
-	            server = NULL;
+	        	httpServerStop();
+	        	server = NULL;
 	        }
 		}
 	}
