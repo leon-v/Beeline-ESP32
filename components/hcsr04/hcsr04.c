@@ -8,6 +8,8 @@ static component_t component = {
 	.messagesOut = 1,
 };
 
+#define POWER_ENABLE_PIN 23
+
 #define TIMER_DIVIDER		2  //  Hardware timer clock divider
 #define TIMER_SCALE			(TIMER_BASE_CLK / TIMER_DIVIDER)  // convert counter value to seconds
 #define TIMER_SCALEUS		TIMER_SCALE * 1000000
@@ -72,6 +74,36 @@ void IRAM_ATTR hcsr04EchoISR(void * arg){
 		xQueueSendFromISR(component.queue, &timerTicks, NULL);
 	}
 }
+void hcsr04Enable(void){
+
+	gpio_set_level(POWER_ENABLE_PIN, 1);
+
+	vTaskDelay(500 / portTICK_RATE_MS);
+
+	// Setup GPIO for echo pin
+	gpio_config_t io_conf;
+	io_conf.pull_down_en = 0;
+    io_conf.pull_up_en = 0;
+    io_conf.intr_type = GPIO_INTR_ANYEDGE;
+    io_conf.mode = GPIO_MODE_INPUT;
+    io_conf.pin_bit_mask = (0x01 << CONFIG_HCSR04_ECHO_PIN);
+    gpio_config(&io_conf);
+}
+
+void hcsr04Disable(void){
+
+	// Setup GPIO for echo pin
+	gpio_config_t io_conf;
+	io_conf.pull_down_en = 0;
+    io_conf.pull_up_en = 0;
+    io_conf.intr_type = GPIO_INTR_DISABLE;
+    io_conf.mode = GPIO_MODE_INPUT;
+    io_conf.pin_bit_mask = (0x01 << CONFIG_HCSR04_ECHO_PIN);
+    gpio_config(&io_conf);
+
+	gpio_set_level(POWER_ENABLE_PIN, 0);
+}
+
 
 void hcsr04Trigger(void){
 
@@ -95,11 +127,6 @@ static void task(void * arg) {
 	io_conf.pull_down_en = 0;
     io_conf.pull_up_en = 0;
 
-    // Setup GPIO for echo pin
-    io_conf.intr_type = GPIO_INTR_ANYEDGE;
-    io_conf.mode = GPIO_MODE_INPUT;
-    io_conf.pin_bit_mask = (0x01 << CONFIG_HCSR04_ECHO_PIN);
-    gpio_config(&io_conf);
 
     // Attach the ISR to the GPIO interrupt
     gpio_isr_handler_add(CONFIG_HCSR04_ECHO_PIN, hcsr04EchoISR, (void*) CONFIG_HCSR04_ECHO_PIN);
@@ -108,6 +135,12 @@ static void task(void * arg) {
     io_conf.intr_type = GPIO_INTR_DISABLE;
     io_conf.mode = GPIO_MODE_OUTPUT;
     io_conf.pin_bit_mask = (0x01 << CONFIG_HCSR04_TRIG_PIN);
+    gpio_config(&io_conf);
+
+
+    io_conf.intr_type = GPIO_INTR_DISABLE;
+    io_conf.mode = GPIO_MODE_OUTPUT;
+    io_conf.pin_bit_mask = (0x01 << POWER_ENABLE_PIN);
     gpio_config(&io_conf);
 
     // Setup the timer that will count the time between pulse TX and RX
@@ -137,11 +170,11 @@ static void task(void * arg) {
 			continue;
 		}
 
-		componentSetReady(&component);
-
 		if (componentQueueRecieve(&component, "Wake Timer", &queueItem) != ESP_OK) {
 			continue;
 		}
+
+		ESP_LOGW(component.name, "Woke form Wake Timer");
 
 		// Skip if 0 / disabled
 		if (!timerCount) {
@@ -151,6 +184,8 @@ static void task(void * arg) {
 		if (++count < timerCount) {
 			continue;
 		}
+
+		hcsr04Enable();
 
 		count = 0;
 
@@ -167,19 +202,19 @@ static void task(void * arg) {
 
 		uint64_t timerTicks;
 
-		while (loop--){
+		while ((loop--) > 0) {
 
 			vTaskDelay(delay / portTICK_RATE_MS);
 
 			hcsr04Trigger();
 
 			if (!xQueueReceive(component.queue, &timerTicks, 20 / portTICK_RATE_MS)) {
-				ESP_LOGE(component.name, " No response from module");
+				// ESP_LOGE(component.name, " No response from module");
 				continue;
 			}
 
 			if (timerTicks == 0){
-				ESP_LOGE(component.name, "Timeout while waiting for echo.");
+				// ESP_LOGE(component.name, "Timeout while waiting for echo.");
 				continue;
 			}
 
@@ -190,6 +225,8 @@ static void task(void * arg) {
 				break;
 			}
 		}
+
+		hcsr04Disable();
 
 		if (actualSamples < required){
 			ESP_LOGE(component.name, "Not enough samples.");

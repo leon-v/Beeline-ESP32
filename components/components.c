@@ -256,7 +256,7 @@ void componentsUsed(component_t * pComponent) {
 		return;
 	}
 
-	ESP_LOGW(pComponent->name, "Used, Timer reset");
+	// ESP_LOGW(pComponent->name, "Used, Timer reset");
 
 	if (xTimerReset(pComponent->idleTimer, 0) != pdPASS) {
 		ESP_LOGE(pComponent->name, "Timer reset error");
