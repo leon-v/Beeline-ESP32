@@ -170,7 +170,7 @@ void radioCreateMessage(message_t * message, unsigned char * radioBuffer, int bu
 
 void radioInit(void) {
 
-	#if RADIO_SX1278_DRIVER_ENABLE == 'y'
+	#ifdef CONFIG_RADIO_SX1278_DRIVER_ENABLE
 		radioSX1278Init();
 	#endif
 

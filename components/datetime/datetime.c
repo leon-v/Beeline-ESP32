@@ -42,6 +42,8 @@ static void task(void *arg){
     static struct tm timeinfo = { 0 };
     while(timeinfo.tm_year < (2016 - 1900)) {
 
+    	componentsUsed(componentsGet("WiFi"));
+
     	ESP_LOGI(component.name, "Waiting for time to get updated from %s", host);
 
     	vTaskDelay(2000 / portTICK_PERIOD_MS);

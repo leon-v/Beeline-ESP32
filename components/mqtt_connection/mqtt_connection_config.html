@@ -47,11 +47,6 @@
 		</div>
 	</div>
 
-	<h3>Incoming Message Routing</h3>
-	<div class="inputBlock">
-		<!--#component:routeOptions:mqtt-->
-	</div>
-
 	<h3>Incoming Message Topic</h3>
 	<div class="inputBlock">
 		<div class="input">
@@ -83,6 +78,21 @@
 	<h3>Message Routing</h3>
 	<div class="inputBlock">
 		<!--#components:routing:MQTT Client-->
+	</div>
+
+	<h3>Idle Timeout</h3>
+	<div class="inputBlock">
+		<div class="input">
+			<div class="m">
+				<input type="text" name="nvs:MQTT Client:u32:idleTimeout" value="<!--#nvs:MQTT Client:u32:idleTimeout-->" >
+			</div>
+			<div class="r">Seconds</div>
+		</div>
+		<p class="info">
+			How many seconds to wait after this component was used before disabling it.<br>
+			0 = Keep connected even when its not being used.<br>
+			Used to save battery life.<br>
+		</p>
 	</div>
 
 	<button>Save Settings</button>

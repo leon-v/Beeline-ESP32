@@ -23,7 +23,7 @@ static void saveNVS(nvs_handle nvsHandle){
 }
 
 static void loadNVS(nvs_handle nvsHandle){
-	timerCount =		componentsGetNVSu32(nvsHandle, "timerCount", 1);
+	timerCount =		componentsGetNVSu32(nvsHandle, "timerCount", 0);
 }
 
 static int dieTemperatureGet (void) {
@@ -56,14 +56,16 @@ static void task(void * arg) {
 			continue;
 		}
 
+		// Skip if 0 / disabled
+		if (!timerCount) {
+			continue;
+		}
 
 		if (++count < timerCount) {
 			continue;
 		}
 
 		count = 0;
-
-		ESP_LOGW(component.name, "Got queue item from wake timer");
 
 		static message_t message;
 		strcpy(message.deviceName, deviceGetUniqueName());

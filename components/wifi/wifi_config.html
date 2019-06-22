@@ -5,7 +5,7 @@
 	<h3>SSID</h3>
 	<div class="inputBlock">
 		<div class="input">
-			<input type="text" name="nvs:WiFi Client:string:ssid" value="<!--#nvs:WiFi Client:string:ssid-->" >
+			<input type="text" name="nvs:WiFi:string:ssid" value="<!--#nvs:WiFi:string:ssid-->" >
 		</div>
 	</div>
 
@@ -13,8 +13,23 @@
 	<h3>Key / Password</h3>
 	<div class="inputBlock">
 		<div class="input">
-			<input type="password" name="nvs:WiFi Client:string:password" value="<!--#nvs:WiFi Client:string:password-->" >
+			<input type="password" name="nvs:WiFi:string:password" value="<!--#nvs:WiFi:string:password-->" >
 		</div>
+	</div>
+
+	<h3>Idle Timeout</h3>
+	<div class="inputBlock">
+		<div class="input">
+			<div class="m">
+				<input type="text" name="nvs:WiFi:u32:idleTimeout" value="<!--#nvs:WiFi:u32:idleTimeout-->" >
+			</div>
+			<div class="r">Seconds</div>
+		</div>
+		<p class="info">
+			How many seconds to wait after this component was used before disabling it.<br>
+			0 = Keep connected even when its not being used.<br>
+			Used to save battery life.<br>
+		</p>
 	</div>
 
 <button>Save Settings</button>

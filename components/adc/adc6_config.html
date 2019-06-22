@@ -1,0 +1,52 @@
+<!--#page:template_top_html-->
+<h2>ADC 6 Configuration</h2>
+
+<form action="" method="post">
+
+	<h3>Wake Timer Multiply</h3>
+	<div class="inputBlock">
+		<div class="input">
+			<input type="number" name="nvs:ADC:u32:adc6TimerCount" value="<!--#nvs:ADC:u32:adc6TimerCount-->" >
+		</div>
+		<p class="info">The amount of times the wake timer event fires before this event is fired.</p>
+	</div>
+
+	<h3>Sensor Name</h3>
+	<div class="inputBlock">
+		<div class="input">
+			<input type="text" name="nvs:ADC:string:adc6Name" value="<!--#nvs:ADC:string:adc6Name-->" >
+		</div>
+		<p class="info">The sensor name to be used in messages.</p>
+	</div>
+
+	<h3>Attenuation</h3>
+	<div class="inputBlock">
+		<div class="input">
+			<select name="nvs:ADC:u8:adc6Atten">
+				<option value="0" <!--#nvs:ADC:u8Selected:adc6Atten:0--> >0db	(0 to 1.1V or 1/1)</option>
+				<option value="1" <!--#nvs:ADC:u8Selected:adc6Atten:1--> >2.5db	(0 to 1.5V or 1/1.34)</option>
+				<option value="2" <!--#nvs:ADC:u8Selected:adc6Atten:2--> >6db	(0 to 2.2V or 1/2)</option>
+				<option value="3" <!--#nvs:ADC:u8Selected:adc6Atten:3--> >11db	(0 to 3.9v or 1/3.6)</option>
+			</select>
+		</div>
+	</div>
+
+	<h3>Average Samples</h3>
+	<div class="inputBlock">
+		<div class="input">
+			<input type="text" name="nvs:ADC:u32:adc6Samples" value="<!--#nvs:ADC:u32:adc6Samples-->" >
+		</div>
+		<p class="info">The amount of samples to average together.</p>
+	</div>
+
+	<h3>Multiplier</h3>
+	<div class="inputBlock">
+		<div class="input">
+			<input type="text" name="nvs:ADC:float:adc6Mul" value="<!--#nvs:ADC:float:adc6Mul-->" >
+		</div>
+		<p class="info">This value is multiplied by the ADC result in millivolts before used in the message.</p>
+	</div>
+
+	<button>Save Settings</button>
+</form>
+<!--#page:template_bottom_html-->

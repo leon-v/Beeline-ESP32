@@ -5,7 +5,6 @@
 
 static component_t component = {
 	.name = "HCSR04",
-	.messagesIn = 0,
 	.messagesOut = 1,
 };
 
@@ -34,7 +33,7 @@ static void saveNVS(nvs_handle nvsHandle){
 }
 
 static void loadNVS(nvs_handle nvsHandle){
-	timerCount =	componentsGetNVSu32(nvsHandle, "timerCount"	, 1);
+	timerCount =	componentsGetNVSu32(nvsHandle, "timerCount"	, 0);
 	samples =		componentsGetNVSu32(nvsHandle, "samples"	, 50);
 	required =		componentsGetNVSu32(nvsHandle, "required"	, 20);
 	delay =			componentsGetNVSu32(nvsHandle, "delay"		, 20);
@@ -144,13 +143,18 @@ static void task(void * arg) {
 			continue;
 		}
 
+		// Skip if 0 / disabled
+		if (!timerCount) {
+			continue;
+		}
+
 		if (++count < timerCount) {
 			continue;
 		}
 
 		count = 0;
 
-		ESP_LOGW(component.name, "Got queue item from wake timer");
+		// ESP_LOGW(component.name, "Got queue item from wake timer");
 
 		int loop = samples;
 		int actualSamples = 0;

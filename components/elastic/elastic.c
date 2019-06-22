@@ -127,18 +127,20 @@ static void task(void * arg) {
 
 	while (true){
 
-		if (componentReadyWait("WiFi") != ESP_OK) {
-			continue;
-		}
-
-		if (componentReadyWait("Date Time") != ESP_OK) {
-			continue;
-		}
-
 		static message_t message;
     	if (componentMessageRecieve(&component, &message) != ESP_OK) {
     		continue;
     	}
+
+		if (componentReadyWait("WiFi") != ESP_OK) {
+			ESP_LOGE(component.name, "Discarded message while waiting for %s", "WiFi");
+			continue;
+		}
+
+		if (componentReadyWait("Date Time") != ESP_OK) {
+			ESP_LOGE(component.name, "Discarded message while waiting for %s", "Date Time");
+			continue;
+		}
 
 		static cJSON * request;
 		request = cJSON_CreateObject();
@@ -198,7 +200,7 @@ static void task(void * arg) {
 		strcat(fullURL, message.deviceName);
 		strcat(fullURL, "/router");
 
-		ESP_LOGI(component.name, "Requesting %s", fullURL);
+		// ESP_LOGI(component.name, "Requesting %s", fullURL);
 
 		static esp_http_client_config_t config = {
 			.url = fullURL,
@@ -215,7 +217,11 @@ static void task(void * arg) {
 
 		ESP_ERROR_CHECK_WITHOUT_ABORT(esp_http_client_set_header(client, "Content-Type", "application/json"));
 
-		ESP_ERROR_CHECK_WITHOUT_ABORT(esp_http_client_perform(client));
+		esp_err_t espError = esp_http_client_perform(client);
+
+		if (espError != ESP_OK) {
+			ESP_LOGE(component.name, "Failed to perform http request. ESP Error %d", espError);
+		}
 
 		esp_http_client_cleanup(client);
 

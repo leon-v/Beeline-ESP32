@@ -7,14 +7,15 @@
 #include "http_server.h"
 
 static component_t component = {
-	.name = "HTTP Server",
-	.messagesIn = 0,
-	.messagesOut = 0,
-	.priority = 10
+	.name = "HTTP Server"
 };
 
-#define HTTP_STACK_SIZE 16384
-#define HTTP_BUFFER_SIZE HTTP_STACK_SIZE / 2
+static const char config_html_start[] asm("_binary_http_server_config_html_start");
+static const httpPage_t configPage = {
+	.uri	= "/http_server_config.html",
+	.page	= config_html_start,
+	.type	= HTTPD_TYPE_TEXT
+};
 
 httpd_handle_t server = NULL;
 
@@ -22,35 +23,35 @@ httpd_handle_t server = NULL;
 #define END_SSI "-->"
 
 static const char index_html_start[] asm("_binary_index_html_start");
-const httpPage_t httpPageIndexHTML = {
+static const httpPage_t httpPageIndexHTML = {
 	.uri	= "/",
 	.page	= index_html_start,
 	.type	= HTTPD_TYPE_TEXT
 };
 
 static const char menu_html_start[] asm("_binary_menu_html_start");
-const httpPage_t httpPageMenuHTML = {
+static const httpPage_t httpPageMenuHTML = {
 	.uri	= "/menu.html",
 	.page	= menu_html_start,
 	.type	= HTTPD_TYPE_TEXT
 };
 
 static const char menu_css_start[] asm("_binary_menu_css_start");
-const httpPage_t httpPageMenuCSS = {
+static const httpPage_t httpPageMenuCSS = {
 	.uri	= "/menu.css",
 	.page	= menu_css_start,
 	.type	= "text/css"
 };
 
 static const char style_css_start[] asm("_binary_style_css_start");
-const httpPage_t httpPageStyleCSS = {
+static const httpPage_t httpPageStyleCSS = {
 	.uri	= "/style.css",
 	.page	= style_css_start,
 	.type	= "text/css"
 };
 
 static const char javascript_js_start[] asm("_binary_javascript_js_start");
-const httpPage_t httpPageJavascriptJS = {
+static const httpPage_t httpPageJavascriptJS = {
 	.uri	= "/javascript.js",
 	.page	= javascript_js_start,
 	.type	= "application/javascript"
@@ -58,15 +59,23 @@ const httpPage_t httpPageJavascriptJS = {
 
 static const char favicon_png_start[]	asm("_binary_favicon_png_start");
 static const char favicon_png_end[]		asm("_binary_favicon_png_end");
-httpFile_t httpFileFaviconPNG = {
+static httpFile_t httpFileFaviconPNG = {
 	.uri	= "/favicon.png",
 	.start	= favicon_png_start,
 	.end	= favicon_png_end,
 	.type	= "image/png"
 };
 
+static void saveNVS(nvs_handle nvsHandle){
+	componentsSetNVSu32(nvsHandle, "idleTimeout", component.idleTimeout);
+}
 
-httpPage_t * httpPages[32];
+static void loadNVS(nvs_handle nvsHandle){
+	component.idleTimeout =	componentsGetNVSu32(nvsHandle, "idleTimeout", 0);
+}
+
+
+const httpPage_t * httpPages[32];
 unsigned char httpPagesLength = 0;
 
 httpFile_t * httpFiles[4];
@@ -77,7 +86,7 @@ void httpServerAddPage(const httpPage_t * httpPage){
 	httpPagesLength++;
 }
 
-void httpServerAddFile(const httpFile_t * httpFile){
+void httpServerAddFile(httpFile_t * httpFile){
 	httpFiles[httpFilesLength] = httpFile;
 	httpFilesLength++;
 }
@@ -118,7 +127,7 @@ static void httpServerURLDecode(char * input, int length) {
     output[0] = '\0';
 }
 
-static char * httpServerParseValues(tokens_t * tokens, char * buffer, const char * rowDelimiter, const char * valueDelimiter, const char * endMatch){
+char * httpServerParseValues(tokens_t * tokens, char * buffer, const char * rowDelimiter, const char * valueDelimiter, const char * endMatch){
 
 	tokens->length = 0;
 
@@ -165,7 +174,7 @@ static char * httpServerParseValues(tokens_t * tokens, char * buffer, const char
 }
 
 
-static char * httpServerGetTokenValue(tokens_t * tokens, const char * key){
+char * httpServerGetTokenValue(tokens_t * tokens, const char * key){
 
 	for (unsigned int index = 0; index < tokens->length; index++){
 
@@ -177,31 +186,12 @@ static char * httpServerGetTokenValue(tokens_t * tokens, const char * key){
 	return NULL;
 }
 
-static esp_err_t httpServerGetPost(httpd_req_t *req, char * postString, unsigned int postStringLength){
-
-	int ret, remaining = req->content_len;
-
-    while (remaining > 0) {
-        /* Read the data for the request */
-        if ((ret = httpd_req_recv(req, postString, MIN(remaining, postStringLength))) < 0) {
-            return ESP_FAIL;
-        }
-
-        remaining -= ret;
-    }
-
-    postString[req->content_len] = '\0';
-
-    return ESP_OK;
-}
-
 void httpServerPageReplaceTag(httpd_req_t *req, char * tag) {
 
 	char * module = strtok(tag, ":");
-	char * error = NULL;
 
 	if (!module){
-		ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, "Failed to get module from tag"));
+		ESP_ERROR_CHECK_WITHOUT_ABORT(httpd_resp_sendstr_chunk(req, "Failed to get module from tag"));
 	}
 
 	char * ssiTag = strtok(NULL, "");
@@ -220,24 +210,26 @@ void httpServerPageReplaceTag(httpd_req_t *req, char * tag) {
 	else if (strcmp(module, "components") == 0){
 		componentsGetHTML(req, ssiTag);
 	}
+	else if (strcmp(module, "get") == 0) {
+		httpSSIGetGet(req, ssiTag);
+	}
+
 
 	else{
-		ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, "Failed to parse module for tag"));
+		ESP_ERROR_CHECK_WITHOUT_ABORT(httpd_resp_sendstr_chunk(req, "Failed to parse module for tag"));
 	}
 }
 static void httpServerPageGetContent(httpd_req_t *req){
 
-	httpPage_t * httpPage = (httpPage_t *) req->user_ctx;
+	const httpPage_t * httpPage = (httpPage_t *) req->user_ctx;
 
-	char tag[CONFIG_HTTP_NVS_MAX_STRING_LENGTH];
-
-	char * tagEndHTMLStart = httpPage->page;
-	char * tagStartHTMLEnd = strstr(tagEndHTMLStart, START_SSI);
+	const char * tagEndHTMLStart = httpPage->page;
+	const char * tagStartHTMLEnd = strstr(tagEndHTMLStart, START_SSI);
 
 	int length;
 
 	if (!tagStartHTMLEnd){
-		ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, tagEndHTMLStart));
+		ESP_ERROR_CHECK_WITHOUT_ABORT(httpd_resp_sendstr_chunk(req, tagEndHTMLStart));
 		return;
 	}
 
@@ -247,7 +239,7 @@ static void httpServerPageGetContent(httpd_req_t *req){
 		length = tagStartHTMLEnd - tagEndHTMLStart;
 
 		if (length > 0){
-			ESP_ERROR_CHECK(httpd_resp_send_chunk(req, tagEndHTMLStart, length));
+			ESP_ERROR_CHECK_WITHOUT_ABORT(httpd_resp_send_chunk(req, tagEndHTMLStart, length));
 		}
 
 		tagStartHTMLEnd+= strlen(START_SSI);
@@ -261,10 +253,15 @@ static void httpServerPageGetContent(httpd_req_t *req){
 
 		length = tagEndHTMLStart - tagStartHTMLEnd;
 
+		char * tag;
+		tag = malloc(length + 1);
+
 		memcpy(tag, tagStartHTMLEnd, length);
 		tag[length] = '\0';
 
 		httpServerPageReplaceTag(req, tag);
+
+		free(tag);
 
 		tagEndHTMLStart+= strlen(END_SSI);
 		tagStartHTMLEnd = strstr(tagEndHTMLStart, START_SSI);
@@ -274,13 +271,47 @@ static void httpServerPageGetContent(httpd_req_t *req){
 
 	length = tagStartHTMLEnd - tagEndHTMLStart;
 	if (length > 0){
-		ESP_ERROR_CHECK(httpd_resp_send_chunk(req, tagEndHTMLStart, length));
+		ESP_ERROR_CHECK_WITHOUT_ABORT(httpd_resp_send_chunk(req, tagEndHTMLStart, length));
 	}
 }
 
-void httpServerPagePost(httpd_req_t *req, char * buffer, size_t bufferLength){
+void httpServerPagePost(httpd_req_t *req){
 
-	ESP_ERROR_CHECK(httpServerGetPost(req, buffer, bufferLength));
+	if (req->content_len <= 0) {
+		ESP_LOGE(component.name, "No POST data");
+		return;
+	}
+
+	char * buffer;
+	buffer = malloc(req->content_len + 1);
+	int bufferLength = 0;
+	int result;
+
+	while (bufferLength < req->content_len) {
+
+        /* Read the data for the request */
+        result = httpd_req_recv(req, buffer, req->content_len - bufferLength);
+
+        if (result <= 0) {
+
+            if (result == HTTPD_SOCK_ERR_TIMEOUT) {
+                /* Retry receiving if timeout occurred */
+                continue;
+            }
+
+            break;
+        }
+
+        bufferLength+= result;
+
+        buffer[bufferLength] = '\0';
+    }
+
+    if (bufferLength < req->content_len) {
+    	httpd_resp_send_408(req);
+    	ESP_LOGE(component.name, "Failed to get POST data");
+    	return;
+    }
 
 	tokens_t post;
 	httpServerParseValues(&post, buffer, "&", "=", "\0");
@@ -306,6 +337,8 @@ void httpServerPagePost(httpd_req_t *req, char * buffer, size_t bufferLength){
 			ESP_LOGE(component.name, "Failed to parse module for tag");
 		}
 	}
+
+	free(buffer);
 }
 
 
@@ -318,31 +351,38 @@ void httpServerPagePost(httpd_req_t *req, char * buffer, size_t bufferLength){
 
 static esp_err_t httpServerPageHandler(httpd_req_t *req){
 
-	httpPage_t * httpPage = (httpPage_t *) req->user_ctx;
+	componentsUsed(&component);
+	componentsUsed(componentsGet("WiFi"));
 
-	char outBuffer[HTTP_BUFFER_SIZE];
+	// ESP_LOGI(component.name, "Start %s", req->uri);
 
-	if (req->method == HTTP_POST) {
-		httpServerPagePost(req, outBuffer, sizeof(outBuffer));
-	}
+	const httpPage_t * httpPage = (httpPage_t *) req->user_ctx;
 
 	if (httpPage->type){
 		httpd_resp_set_type(req, httpPage->type);
+	}
+
+	if (req->method == HTTP_POST) {
+		httpServerPagePost(req);
 	}
 
 	if (httpPage->page){
 		httpServerPageGetContent(req);
 	}
 	else{
-		ESP_ERROR_CHECK(httpd_resp_sendstr_chunk(req, "Nothing found to populate content."));
+		ESP_ERROR_CHECK_WITHOUT_ABORT(httpd_resp_sendstr_chunk(req, "Nothing found to populate content."));
 	}
 
 	/* Send empty chunk to signal HTTP response completion */
-    httpd_resp_sendstr_chunk(req, NULL);
+    ESP_ERROR_CHECK_WITHOUT_ABORT(httpd_resp_sendstr_chunk(req, NULL));
+
     return ESP_OK;
 }
 
 static esp_err_t httpServerFileHandler(httpd_req_t *req){
+
+	componentsUsed(&component);
+	componentsUsed(componentsGet("WiFi"));
 
 	httpFile_t * httpFile = (httpFile_t *) req->user_ctx;
 
@@ -360,7 +400,7 @@ void httpServerPageRegister(const httpPage_t * httpPage){
 	    .uri      	= httpPage->uri,
 	    .method   	= HTTP_GET,
 	    .handler  	= httpServerPageHandler,
-	    .user_ctx	= httpPage,
+	    .user_ctx	= (void *) httpPage,
 	};
 
 	httpd_register_uri_handler(server, &getURI);
@@ -368,10 +408,10 @@ void httpServerPageRegister(const httpPage_t * httpPage){
 	ESP_LOGI(component.name, "Registered %s for GET", getURI.uri);
 
 	httpd_uri_t postURI = {
-	    .uri      = httpPage->uri,
-	    .method   = HTTP_POST,
-	    .handler  = httpServerPageHandler,
-	    .user_ctx	= httpPage,
+	    .uri		= httpPage->uri,
+	    .method		= HTTP_POST,
+	    .handler	= httpServerPageHandler,
+	    .user_ctx	= (void *) httpPage,
 	};
 
 	httpd_register_uri_handler(server, &postURI);
@@ -379,7 +419,7 @@ void httpServerPageRegister(const httpPage_t * httpPage){
 	ESP_LOGI(component.name, "Registered %s for POST", getURI.uri);
 }
 
-void httpServerFileRegister(const httpFile_t * httpFile){
+void httpServerFileRegister(httpFile_t * httpFile){
 
 	httpd_uri_t getURI = {
 	    .uri      	= httpFile->uri,
@@ -396,9 +436,8 @@ void httpServerFileRegister(const httpFile_t * httpFile){
 static void httpServerStart(void) {
 
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-    config.stack_size = HTTP_STACK_SIZE;
 
-    config.max_uri_handlers = 32;
+    config.max_uri_handlers = 64;
 
     // Start the httpd server
     ESP_LOGI(component.name, "Starting server on port: %d", config.server_port);
@@ -410,7 +449,7 @@ static void httpServerStart(void) {
         int i;
         for (i = 0; i < httpPagesLength; i++){
 
-        	httpPage_t * httpPage = httpPages[i];
+        	const httpPage_t * httpPage = httpPages[i];
         	httpServerPageRegister(httpPage);
         }
 
@@ -436,11 +475,22 @@ void httpServerStop(void) {
 
 static void task(void *arg){
 
-	EventBits_t EventBits;
+	httpServerAddPage(&httpPageIndexHTML);
+	httpServerAddPage(&httpPageMenuHTML);
+	httpServerAddPage(&httpPageMenuCSS);
+	httpServerAddPage(&httpPageStyleCSS);
+	httpServerAddPage(&httpPageJavascriptJS);
+
+	httpServerAddFile(&httpFileFaviconPNG);
 
 	componentSetReady(&component);
 
-	while (1){
+	while (true){
+
+		if (componentsEndRequested(&component) == ESP_OK) {
+			ESP_LOGW(component.name, "Ending message loop.");
+			break;
+		}
 
 		if (componentReadyWait("WiFi") == ESP_OK) {
 			/* Start the web server */
@@ -459,25 +509,29 @@ static void task(void *arg){
 		}
 	}
 
+	if (server) {
+		ESP_LOGI(component.name, "Stop");
+        httpServerStop();
+        server = NULL;
+    }
+
+	ESP_LOGW(component.name, "Ending task");
+
+	componentsSetEnded(&component);
+
 	vTaskDelete(NULL);
-    return;
+
+	return;
 }
 
 void httpServerInit(void){
 
-	httpServerAddPage(&httpPageIndexHTML);
-	httpServerAddPage(&httpPageMenuHTML);
-	httpServerAddPage(&httpPageMenuCSS);
-	httpServerAddPage(&httpPageStyleCSS);
-	httpServerAddPage(&httpPageJavascriptJS);
-
-	httpServerAddFile(&httpFileFaviconPNG);
-
-
-	component.task = task;
+	component.configPage	= &configPage;
+	component.task			= &task;
+	component.priority		= 10;
+	component.loadNVS		= &loadNVS;
+	component.saveNVS		= &saveNVS;
 	componentsAdd(&component);
 
 	ESP_LOGI(component.name, "Init");
-
-	// xTaskCreate(&httpServerTask, "http", HTTP_STACK_SIZE, NULL, 14, NULL);
 }

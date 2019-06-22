@@ -38,7 +38,95 @@ void componentsAdd(component_t * pComponent){
 	ESP_LOGI(pComponent->name, "Add");
 }
 
-void componentsLoadNVS(component_t * pComponent){
+void componentsUpdateIdleTimers(component_t * pComponent) {
+
+	if (!pComponent->idleTimer) {
+		return;
+	}
+
+	BaseType_t success = xTimerChangePeriod(
+		pComponent->idleTimer,
+		(pComponent->idleTimeout * 1000) / portTICK_RATE_MS,
+		0
+	);
+
+	ESP_LOGI(pComponent->name, "Updating idle timer with a timeout of %u seconds.", pComponent->idleTimeout);
+
+	if (success != pdPASS) {
+		ESP_LOGE(pComponent->name, "Failed to re-set timer period");
+	}
+}
+
+static void componentsSetRunning(component_t * pComponent) {
+	xEventGroupSetBits(pComponent->eventGroup, COMPONENT_TASK_RUNNING);
+	xEventGroupClearBits(pComponent->eventGroup, COMPONENT_TASK_END_REQUEST);
+	xEventGroupClearBits(pComponent->eventGroup, COMPONENT_TASK_ENDED);
+}
+
+static void componentsSetEndRequest(component_t * pComponent) {
+	xEventGroupClearBits(pComponent->eventGroup, COMPONENT_TASK_RUNNING);
+	xEventGroupSetBits(pComponent->eventGroup, COMPONENT_TASK_END_REQUEST);
+	xEventGroupClearBits(pComponent->eventGroup, COMPONENT_TASK_ENDED);
+}
+
+void componentsSetEnded(component_t * pComponent) {
+	xEventGroupClearBits(pComponent->eventGroup, COMPONENT_TASK_RUNNING);
+	xEventGroupClearBits(pComponent->eventGroup, COMPONENT_TASK_END_REQUEST);
+	xEventGroupSetBits(pComponent->eventGroup, COMPONENT_TASK_ENDED);
+}
+
+void componentsTimerAlarm(TimerHandle_t xTimer) {
+
+	component_t * pComponent = (component_t *) pvTimerGetTimerID(xTimer);
+
+	ESP_LOGW(pComponent->name, "Idle time expired");
+
+	EventBits_t eventBits = xEventGroupGetBits(pComponent->eventGroup);
+
+	if (eventBits & COMPONENT_TASK_RUNNING) {
+		ESP_LOGW(pComponent->name, "Requesting task to end due to idle");
+
+		componentsSetEndRequest(pComponent);
+	}
+}
+
+void componentsStartIdleTimers(component_t * pComponent) {
+
+	EventBits_t eventBits = xEventGroupGetBits(pComponent->eventGroup);
+
+	// Don't create and start the timer if the task is not running
+	if (!(eventBits & COMPONENT_TASK_RUNNING)) {
+		return;
+	}
+
+	// Don't create and start the timer if there is no time-out set
+	if (!pComponent->idleTimeout) {
+		return;
+	}
+
+	// Timer should be started
+
+	// Don't create and start the timer if it has already been created and started
+	if (pComponent->idleTimer){
+		return;
+	}
+
+	pComponent->idleTimer = xTimerCreate(
+		pComponent->name,
+		(pComponent->idleTimeout * 1000) / portTICK_RATE_MS,
+		pdFALSE,
+		(void *) pComponent,
+		componentsTimerAlarm
+	);
+
+	ESP_LOGI(pComponent->name, "Starting idle timer with a timeout of %u seconds.", pComponent->idleTimeout);
+
+	if (xTimerStart(pComponent->idleTimer, 0) != pdPASS) {
+		ESP_LOGE(pComponent->name, "Timer start error");
+	}
+}
+
+void componentsLoadNVS(component_t * pComponent) {
 
 	if (!pComponent){
 		ESP_LOGE(TAG, "Component passed is not valid");
@@ -77,9 +165,24 @@ void componentsLoadNVS(component_t * pComponent){
 	pComponent->loadNVS(nvsHandle);
 
 	nvs_close(nvsHandle);
+
+	componentsStartIdleTimers(pComponent);
+
+	componentsUpdateIdleTimers(pComponent);
 }
 
-void componentsInit(void){
+esp_err_t componentsEndRequested(component_t * pComponent) {
+
+	EventBits_t eventBits = xEventGroupGetBits(pComponent->eventGroup);
+
+	if (eventBits & COMPONENT_TASK_END_REQUEST) {
+		return ESP_OK;
+	}
+
+	return ESP_FAIL;
+}
+
+void componentsInit(void) {
 
 	printf("componentsInit\n");
 
@@ -93,12 +196,14 @@ void componentsInit(void){
 		xEventGroupClearBits(pComponent->eventGroup, COMPONENT_READY);
 		xEventGroupSetBits(pComponent->eventGroup, COMPONENT_NOT_READY);
 
+		componentsSetEnded(pComponent);
+
 		if ( (pComponent->queueItemLength) && (pComponent->queueLength) ) {
 			pComponent->queue = xQueueCreate(pComponent->queueLength, pComponent->queueItemLength);
 		}
 
 		if (pComponent->messagesIn) {
-			pComponent->messageQueue = xQueueCreate(3, sizeof(message_t));
+			pComponent->messageQueue = xQueueCreate(8, sizeof(message_t));
 		}
 
 		if (pComponent->configPage != NULL){
@@ -115,18 +220,62 @@ void componentsInit(void){
 	}
 }
 
+void componentsStartTask(component_t * pComponent) {
+
+	if (pComponent->task == NULL){
+		return;
+	}
+
+	EventBits_t eventBits = xEventGroupGetBits(pComponent->eventGroup);
+
+	if (!(eventBits & COMPONENT_TASK_ENDED)) {
+		return;
+	}
+
+	if (!pComponent->tasStackDepth) {
+		pComponent->tasStackDepth = 2048;
+	}
+
+	xTaskCreate(
+		pComponent->task,
+		pComponent->name,
+		pComponent->tasStackDepth,
+		pComponent->taskArg,
+		5 + pComponent->priority,
+		NULL
+	);
+
+	componentsSetRunning(pComponent);
+
+	componentsStartIdleTimers(pComponent);
+}
+
+void componentsUsed(component_t * pComponent) {
+
+	if (!pComponent->idleTimer) {
+		return;
+	}
+
+	ESP_LOGW(pComponent->name, "Used, Timer reset");
+
+	if (xTimerReset(pComponent->idleTimer, 0) != pdPASS) {
+		ESP_LOGE(pComponent->name, "Timer reset error");
+	}
+
+	EventBits_t eventBits = xEventGroupGetBits(pComponent->eventGroup);
+
+	if (eventBits & COMPONENT_TASK_ENDED) {
+		ESP_LOGW(pComponent->name, "Restarting task");
+		componentsStartTask(pComponent);
+	}
+}
+
 void componentsStart(void){
 	for (unsigned char i=0; i < componentsLength; i++) {
 
 		component_t * pComponent = components[i];
 
-		if (pComponent->task != NULL){
-
-			if (!pComponent->tasStackDepth) {
-				pComponent->tasStackDepth = 2048;
-			}
-			xTaskCreate(pComponent->task, pComponent->name, 2048, NULL, 5 + pComponent->priority, NULL);
-		}
+		componentsStartTask(pComponent);
 
 	}
 }
@@ -149,6 +298,8 @@ component_t * componentsGet(const char * name) {
 
 esp_err_t componentsQueueSend(component_t * pComponent, void * buffer) {
 
+	componentsUsed(pComponent);
+
 	esp_err_t espError = ESP_FAIL;
 	for (unsigned char i=0; i < componentsLength; i++) {
 
@@ -161,6 +312,8 @@ esp_err_t componentsQueueSend(component_t * pComponent, void * buffer) {
 		if (strcmp(pComponentTo->queueRecieveWait, pComponent->name) != 0) {
 			continue;
 		}
+
+		componentsUsed(pComponentTo);
 
 		if (!uxQueueSpacesAvailable(pComponentTo->queue)) {
 			ESP_LOGE(pComponentTo->name, "No room in queue for %s", pComponent->name);
@@ -182,6 +335,7 @@ esp_err_t componentQueueRecieve(component_t * pComponent, const char * name, voi
 	}
 
 	if ( (!pComponent->queueItemLength) || (!pComponent->queueLength) ) {
+		ESP_LOGE(pComponent->name, "has no queue to listen for. Set queueItemLength and queueLength.");
 		return ESP_FAIL;
 	}
 
@@ -205,11 +359,15 @@ esp_err_t componentReadyWait(const char * name){
 		return ESP_FAIL;
 	}
 
+	componentsUsed(pComponent);
+
 	EventBits_t eventBits = xEventGroupWaitBits(pComponent->eventGroup, COMPONENT_READY, false, true, 60000 / portTICK_RATE_MS);
 
 	if (!(eventBits & COMPONENT_READY)) {
 		return ESP_FAIL;
 	}
+
+	componentsUsed(pComponent);
 
 	return ESP_OK;
 }
@@ -222,16 +380,22 @@ esp_err_t componentNotReadyWait(const char * name){
 		return ESP_FAIL;
 	}
 
+	componentsUsed(pComponent);
+
 	EventBits_t eventBits = xEventGroupWaitBits(pComponent->eventGroup, COMPONENT_NOT_READY, false, true, 60000 / portTICK_RATE_MS);
 
 	if (!(eventBits & COMPONENT_NOT_READY)) {
 		return ESP_FAIL;
 	}
 
+	componentsUsed(pComponent);
+
 	return ESP_OK;
 }
 
 void componentSetReady(component_t * pComponent) {
+
+	componentsUsed(pComponent);
 
 	EventBits_t eventBits = xEventGroupGetBits(pComponent->eventGroup);
 
@@ -445,6 +609,47 @@ void componentsSetNVSString(nvs_handle nvsHandle, char * string, const char * ke
 	ESP_ERROR_CHECK(nvs_set_str(nvsHandle, key, string));
 }
 
+float componentsGetNVSFloat(nvs_handle nvsHandle, const char * key, const uint8_t def) {
+	float value;
+
+	size_t length = sizeof(float);
+	esp_err_t espError = nvs_get_blob(nvsHandle, key, &value, &length);
+
+	if (espError == ESP_ERR_NVS_NOT_FOUND) {
+		return def;
+	}
+
+	else if (espError != ESP_OK){
+		ESP_ERROR_CHECK_WITHOUT_ABORT(espError);
+	}
+
+	return value;
+}
+
+void componentsSetNVSFloat(nvs_handle nvsHandle, const char * key, float value) {
+	ESP_ERROR_CHECK(nvs_set_blob(nvsHandle, key, &value, sizeof(float)));
+}
+
+uint8_t componentsGetNVSu8(nvs_handle nvsHandle, const char * key, const uint8_t def) {
+	uint8_t value;
+
+	esp_err_t espError = nvs_get_u8(nvsHandle, key, &value);
+
+	if (espError == ESP_ERR_NVS_NOT_FOUND) {
+		return def;
+	}
+
+	else if (espError != ESP_OK){
+		ESP_ERROR_CHECK_WITHOUT_ABORT(espError);
+	}
+
+	return value;
+}
+
+void componentsSetNVSu8(nvs_handle nvsHandle, const char * key, uint8_t value) {
+	ESP_ERROR_CHECK(nvs_set_u8(nvsHandle, key, value));
+}
+
 // esp_err_t nvs_get_u32 (nvs_handle handle, const char* key, uint32_t* out_value);
 uint32_t componentsGetNVSu32(nvs_handle nvsHandle, const char * key, const uint32_t def) {
 	uint32_t value;
@@ -523,7 +728,8 @@ void componentLogMessage(component_t * pComponent, message_t * pMessage, const c
 
 void componentSendMessage(component_t * pComponentFrom, message_t * pMessage) {
 
-	componentLogMessage(pComponentFrom, pMessage, "Forwarding ");
+	// componentLogMessage(pComponentFrom, pMessage, "Forwarding ");
+	componentsUsed(pComponentFrom);
 
 	pComponentFrom->messagesSent++;
 
@@ -546,14 +752,16 @@ void componentSendMessage(component_t * pComponentFrom, message_t * pMessage) {
 			continue;
 		}
 
+		componentsUsed(pComponentTo);
+
 		pComponentTo->messagesRecieved++;
 
 		if (!uxQueueSpacesAvailable(pComponentTo->messageQueue)) {
-			ESP_LOGE(pComponentTo->name, "No room in message queue for %s", pComponentFrom->name);
+			ESP_LOGE(pComponentTo->name, "No room in message queue for %s", pMessage->sensorName);
 			continue;
 		}
 
-		componentLogMessage(pComponentTo, pMessage, "Got ");
+		// componentLogMessage(pComponentTo, pMessage, "Got ");
 
 		xQueueSend(pComponentTo->messageQueue, pMessage, 0);
 	}

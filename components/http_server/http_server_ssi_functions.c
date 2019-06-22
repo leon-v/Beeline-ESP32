@@ -1,8 +1,6 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
 #include <freertos/task.h>
-#include <esp_log.h>
-#include <string.h>
 
 #include "http_server.h"
 

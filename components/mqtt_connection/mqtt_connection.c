@@ -33,6 +33,8 @@ static void saveNVS(nvs_handle nvsHandle){
 	componentsSetNVSString(nvsHandle, password, "password");
 	componentsSetNVSString(nvsHandle, inTopic, "inTopic");
 	componentsSetNVSString(nvsHandle, outTopic, "outTopic");
+
+	componentsSetNVSu32(nvsHandle, "idleTimeout", component.idleTimeout);
 }
 
 static void loadNVS(nvs_handle nvsHandle){
@@ -43,6 +45,8 @@ static void loadNVS(nvs_handle nvsHandle){
 	password = 	componentsGetNVSString(nvsHandle, password, "password", "");
 	inTopic = 	componentsGetNVSString(nvsHandle, inTopic, "inTopic", "/beeline/out/#");
 	outTopic = 	componentsGetNVSString(nvsHandle, outTopic, "outTopic", "/beeline/in");
+
+	component.idleTimeout =	componentsGetNVSu32(nvsHandle, "idleTimeout", 0);
 }
 
 static esp_err_t mqttConnectionEventHandler(esp_mqtt_event_handle_t event){
@@ -74,8 +78,8 @@ static esp_err_t mqttConnectionEventHandler(esp_mqtt_event_handle_t event){
 
         case MQTT_EVENT_SUBSCRIBED:
             ESP_LOGI(component.name, "MQTT_EVENT_SUBSCRIBED, msg_id=%d", event->msg_id);
-            msg_id = esp_mqtt_client_publish(client, "/topic/qos0", "data", 0, 0, 0);
-            ESP_LOGI(component.name, "sent publish successful, msg_id=%d", msg_id);
+            // msg_id = esp_mqtt_client_publish(client, "/topic/qos0", "data", 0, 0, 0);
+            // ESP_LOGI(component.name, "sent publish successful, msg_id=%d", msg_id);
 		break;
 
         case MQTT_EVENT_UNSUBSCRIBED:
@@ -83,7 +87,7 @@ static esp_err_t mqttConnectionEventHandler(esp_mqtt_event_handle_t event){
 		break;
 
         case MQTT_EVENT_PUBLISHED:
-            ESP_LOGI(component.name, "MQTT_EVENT_PUBLISHED, msg_id=%d", event->msg_id);
+            // ESP_LOGI(component.name, "MQTT_EVENT_PUBLISHED, msg_id=%d", event->msg_id);
 		break;
 
         case MQTT_EVENT_DATA:
@@ -120,7 +124,7 @@ static esp_err_t mqttConnectionEventHandler(esp_mqtt_event_handle_t event){
         		break;
         	}
 
-        	static message_t message;
+        	message_t message;
 
         	strcpy(message.deviceName, subTopics[0]);
         	strcpy(message.sensorName, subTopics[1]);
@@ -242,24 +246,50 @@ static void task(void * arg) {
 
     	esp_mqtt_client_start(client);
 
-    	while (componentReadyWait(component.name) == ESP_OK) {
+    	while (true) {
+
+    		if (componentsEndRequested(&component) == ESP_OK) {
+    			ESP_LOGW(component.name, "Ending message loop.");
+    			break;
+    		}
 
     		static message_t message;
     		if (componentMessageRecieve(&component, &message) != ESP_OK) {
     			continue;
     		}
 
+    		if (componentReadyWait("WiFi") != ESP_OK) {
+    			ESP_LOGE(component.name, "Discarded message while waiting for %s", "WiFi");
+				continue;
+			}
+
+    		if (componentReadyWait(component.name) != ESP_OK){
+    			ESP_LOGE(component.name, "Discarded message while waiting for %s", component.name);
+    			continue;
+    		}
+
     		char * topic = mqttConnectionTopicFromMessage(&message);
     		char * value = mqttConnectionValueFromMessage(&message);
 
-    		int mqttMessageID;
-			mqttMessageID = esp_mqtt_client_publish(client, topic, value, 0, 1, 0);
+			esp_mqtt_client_publish(client, topic, value, 0, 1, 0);
     	}
 
 		esp_mqtt_client_stop(client);
+
+		esp_mqtt_client_destroy(client);
+
+		if (componentsEndRequested(&component) == ESP_OK) {
+			ESP_LOGW(component.name, "Ending connection loop.");
+			break;
+		}
 	}
 
+	ESP_LOGW(component.name, "Ending task");
+
+	componentsSetEnded(&component);
+
 	vTaskDelete(NULL);
+
 	return;
 }
 
