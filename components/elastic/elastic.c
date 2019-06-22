@@ -133,10 +133,12 @@ static void task(void * arg) {
     	}
 
 		if (componentReadyWait("WiFi") != ESP_OK) {
+			ESP_LOGE(component.name, "Discarded message while waiting for %s", "WiFi");
 			continue;
 		}
 
 		if (componentReadyWait("Date Time") != ESP_OK) {
+			ESP_LOGE(component.name, "Discarded message while waiting for %s", "Date Time");
 			continue;
 		}
 

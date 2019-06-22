@@ -7,10 +7,14 @@
 #include "http_server.h"
 
 static component_t component = {
-	.name = "HTTP Server",
-	.messagesIn = 0,
-	.messagesOut = 0,
-	.priority = 10
+	.name = "HTTP Server"
+};
+
+static const char config_html_start[] asm("_binary_http_server_config_html_start");
+static const httpPage_t configPage = {
+	.uri	= "/http_server_config.html",
+	.page	= config_html_start,
+	.type	= HTTPD_TYPE_TEXT
 };
 
 httpd_handle_t server = NULL;
@@ -61,6 +65,14 @@ static httpFile_t httpFileFaviconPNG = {
 	.end	= favicon_png_end,
 	.type	= "image/png"
 };
+
+static void saveNVS(nvs_handle nvsHandle){
+	componentsSetNVSu32(nvsHandle, "idleTimeout", component.idleTimeout);
+}
+
+static void loadNVS(nvs_handle nvsHandle){
+	component.idleTimeout =	componentsGetNVSu32(nvsHandle, "idleTimeout", 0);
+}
 
 
 const httpPage_t * httpPages[32];
@@ -339,6 +351,9 @@ void httpServerPagePost(httpd_req_t *req){
 
 static esp_err_t httpServerPageHandler(httpd_req_t *req){
 
+	componentsUsed(&component);
+	componentsUsed(componentsGet("WiFi"));
+
 	// ESP_LOGI(component.name, "Start %s", req->uri);
 
 	const httpPage_t * httpPage = (httpPage_t *) req->user_ctx;
@@ -361,12 +376,13 @@ static esp_err_t httpServerPageHandler(httpd_req_t *req){
 	/* Send empty chunk to signal HTTP response completion */
     ESP_ERROR_CHECK_WITHOUT_ABORT(httpd_resp_sendstr_chunk(req, NULL));
 
-    // ESP_LOGI(component.name, "End %s", req->uri);
-
     return ESP_OK;
 }
 
 static esp_err_t httpServerFileHandler(httpd_req_t *req){
+
+	componentsUsed(&component);
+	componentsUsed(componentsGet("WiFi"));
 
 	httpFile_t * httpFile = (httpFile_t *) req->user_ctx;
 
@@ -459,9 +475,22 @@ void httpServerStop(void) {
 
 static void task(void *arg){
 
+	httpServerAddPage(&httpPageIndexHTML);
+	httpServerAddPage(&httpPageMenuHTML);
+	httpServerAddPage(&httpPageMenuCSS);
+	httpServerAddPage(&httpPageStyleCSS);
+	httpServerAddPage(&httpPageJavascriptJS);
+
+	httpServerAddFile(&httpFileFaviconPNG);
+
 	componentSetReady(&component);
 
-	while (1){
+	while (true){
+
+		if (componentsEndRequested(&component) == ESP_OK) {
+			ESP_LOGW(component.name, "Ending message loop.");
+			break;
+		}
 
 		if (componentReadyWait("WiFi") == ESP_OK) {
 			/* Start the web server */
@@ -480,22 +509,28 @@ static void task(void *arg){
 		}
 	}
 
+	if (server) {
+		ESP_LOGI(component.name, "Stop");
+        httpServerStop();
+        server = NULL;
+    }
+
+	ESP_LOGW(component.name, "Ending task");
+
+	componentsSetEnded(&component);
+
 	vTaskDelete(NULL);
-    return;
+
+	return;
 }
 
 void httpServerInit(void){
 
-	httpServerAddPage(&httpPageIndexHTML);
-	httpServerAddPage(&httpPageMenuHTML);
-	httpServerAddPage(&httpPageMenuCSS);
-	httpServerAddPage(&httpPageStyleCSS);
-	httpServerAddPage(&httpPageJavascriptJS);
-
-	httpServerAddFile(&httpFileFaviconPNG);
-
-
-	component.task = task;
+	component.configPage	= &configPage;
+	component.task			= &task;
+	component.priority		= 10;
+	component.loadNVS		= &loadNVS;
+	component.saveNVS		= &saveNVS;
 	componentsAdd(&component);
 
 	ESP_LOGI(component.name, "Init");

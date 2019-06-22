@@ -248,19 +248,23 @@ static void task(void * arg) {
 
     	while (true) {
 
-    		componentsUsed(componentsGet("WiFi"));
-
     		if (componentsEndRequested(&component) == ESP_OK) {
     			ESP_LOGW(component.name, "Ending message loop.");
     			break;
     		}
 
-    		if (componentReadyWait(component.name) != ESP_OK){
+    		static message_t message;
+    		if (componentMessageRecieve(&component, &message) != ESP_OK) {
     			continue;
     		}
 
-    		static message_t message;
-    		if (componentMessageRecieve(&component, &message) != ESP_OK) {
+    		if (componentReadyWait("WiFi") != ESP_OK) {
+    			ESP_LOGE(component.name, "Discarded message while waiting for %s", "WiFi");
+				continue;
+			}
+
+    		if (componentReadyWait(component.name) != ESP_OK){
+    			ESP_LOGE(component.name, "Discarded message while waiting for %s", component.name);
     			continue;
     		}
 

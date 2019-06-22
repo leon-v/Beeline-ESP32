@@ -38,6 +38,94 @@ void componentsAdd(component_t * pComponent){
 	ESP_LOGI(pComponent->name, "Add");
 }
 
+void componentsUpdateIdleTimers(component_t * pComponent) {
+
+	if (!pComponent->idleTimer) {
+		return;
+	}
+
+	BaseType_t success = xTimerChangePeriod(
+		pComponent->idleTimer,
+		(pComponent->idleTimeout * 1000) / portTICK_RATE_MS,
+		0
+	);
+
+	ESP_LOGI(pComponent->name, "Updating idle timer with a timeout of %u seconds.", pComponent->idleTimeout);
+
+	if (success != pdPASS) {
+		ESP_LOGE(pComponent->name, "Failed to re-set timer period");
+	}
+}
+
+static void componentsSetRunning(component_t * pComponent) {
+	xEventGroupSetBits(pComponent->eventGroup, COMPONENT_TASK_RUNNING);
+	xEventGroupClearBits(pComponent->eventGroup, COMPONENT_TASK_END_REQUEST);
+	xEventGroupClearBits(pComponent->eventGroup, COMPONENT_TASK_ENDED);
+}
+
+static void componentsSetEndRequest(component_t * pComponent) {
+	xEventGroupClearBits(pComponent->eventGroup, COMPONENT_TASK_RUNNING);
+	xEventGroupSetBits(pComponent->eventGroup, COMPONENT_TASK_END_REQUEST);
+	xEventGroupClearBits(pComponent->eventGroup, COMPONENT_TASK_ENDED);
+}
+
+void componentsSetEnded(component_t * pComponent) {
+	xEventGroupClearBits(pComponent->eventGroup, COMPONENT_TASK_RUNNING);
+	xEventGroupClearBits(pComponent->eventGroup, COMPONENT_TASK_END_REQUEST);
+	xEventGroupSetBits(pComponent->eventGroup, COMPONENT_TASK_ENDED);
+}
+
+void componentsTimerAlarm(TimerHandle_t xTimer) {
+
+	component_t * pComponent = (component_t *) pvTimerGetTimerID(xTimer);
+
+	ESP_LOGW(pComponent->name, "Idle time expired");
+
+	EventBits_t eventBits = xEventGroupGetBits(pComponent->eventGroup);
+
+	if (eventBits & COMPONENT_TASK_RUNNING) {
+		ESP_LOGW(pComponent->name, "Requesting task to end due to idle");
+
+		componentsSetEndRequest(pComponent);
+	}
+}
+
+void componentsStartIdleTimers(component_t * pComponent) {
+
+	EventBits_t eventBits = xEventGroupGetBits(pComponent->eventGroup);
+
+	// Don't create and start the timer if the task is not running
+	if (!(eventBits & COMPONENT_TASK_RUNNING)) {
+		return;
+	}
+
+	// Don't create and start the timer if there is no time-out set
+	if (!pComponent->idleTimeout) {
+		return;
+	}
+
+	// Timer should be started
+
+	// Don't create and start the timer if it has already been created and started
+	if (pComponent->idleTimer){
+		return;
+	}
+
+	pComponent->idleTimer = xTimerCreate(
+		pComponent->name,
+		(pComponent->idleTimeout * 1000) / portTICK_RATE_MS,
+		pdFALSE,
+		(void *) pComponent,
+		componentsTimerAlarm
+	);
+
+	ESP_LOGI(pComponent->name, "Starting idle timer with a timeout of %u seconds.", pComponent->idleTimeout);
+
+	if (xTimerStart(pComponent->idleTimer, 0) != pdPASS) {
+		ESP_LOGE(pComponent->name, "Timer start error");
+	}
+}
+
 void componentsLoadNVS(component_t * pComponent) {
 
 	if (!pComponent){
@@ -78,34 +166,9 @@ void componentsLoadNVS(component_t * pComponent) {
 
 	nvs_close(nvsHandle);
 
-	if ( (pComponent->idleTimeout) && (pComponent->idleTimer) ) {
+	componentsStartIdleTimers(pComponent);
 
-		if (xTimerChangePeriod(
-				pComponent->idleTimer,
-				(pComponent->idleTimeout * 1000) / portTICK_RATE_MS,
-				0
-			) != pdPASS) {
-			ESP_LOGE(pComponent->name, "Failed to re-set timer period");
-		}
-	}
-
-}
-
-void componentsTimerAlarm(TimerHandle_t xTimer) {
-
-	component_t * pComponent = (component_t *) pvTimerGetTimerID(xTimer);
-
-	ESP_LOGW(pComponent->name, "Idle time expired");
-
-	EventBits_t eventBits = xEventGroupGetBits(pComponent->eventGroup);
-
-	if (eventBits & COMPONENT_TASK_RUNNING) {
-		ESP_LOGW(pComponent->name, "Requesting task to end due to idle");
-
-		xEventGroupClearBits(pComponent->eventGroup, COMPONENT_TASK_RUNNING);
-		xEventGroupSetBits(pComponent->eventGroup, COMPONENT_TASK_END_REQUEST);
-		xEventGroupClearBits(pComponent->eventGroup, COMPONENT_TASK_ENDED);
-	}
+	componentsUpdateIdleTimers(pComponent);
 }
 
 esp_err_t componentsEndRequested(component_t * pComponent) {
@@ -117,12 +180,6 @@ esp_err_t componentsEndRequested(component_t * pComponent) {
 	}
 
 	return ESP_FAIL;
-}
-
-void componentsSetEnded(component_t * pComponent) {
-	xEventGroupClearBits(pComponent->eventGroup, COMPONENT_TASK_RUNNING);
-	xEventGroupClearBits(pComponent->eventGroup, COMPONENT_TASK_END_REQUEST);
-	xEventGroupSetBits(pComponent->eventGroup, COMPONENT_TASK_ENDED);
 }
 
 void componentsInit(void) {
@@ -159,23 +216,6 @@ void componentsInit(void) {
 
 		componentsLoadNVS(pComponent);
 
-		if (pComponent->idleTimeout) {
-
-			pComponent->idleTimer = xTimerCreate(
-				pComponent->name,
-				(pComponent->idleTimeout * 1000) / portTICK_RATE_MS,
-				pdFALSE,
-				(void *) pComponent,
-				componentsTimerAlarm
-			);
-
-			ESP_LOGI(pComponent->name, "Starting idle timer with a timeout of %u seconds.", pComponent->idleTimeout);
-
-			if (xTimerStart(pComponent->idleTimer, 0) != pdPASS) {
-				ESP_LOGE(pComponent->name, "Timer start error");
-			}
-		}
-
 		ESP_LOGI(pComponent->name, "Init");
 	}
 }
@@ -205,9 +245,9 @@ void componentsStartTask(component_t * pComponent) {
 		NULL
 	);
 
-	xEventGroupSetBits(pComponent->eventGroup, COMPONENT_TASK_RUNNING);
-	xEventGroupClearBits(pComponent->eventGroup, COMPONENT_TASK_END_REQUEST);
-	xEventGroupClearBits(pComponent->eventGroup, COMPONENT_TASK_ENDED);
+	componentsSetRunning(pComponent);
+
+	componentsStartIdleTimers(pComponent);
 }
 
 void componentsUsed(component_t * pComponent) {
@@ -374,8 +414,6 @@ void componentSetReady(component_t * pComponent) {
 }
 
 void componentSetNotReady(component_t * pComponent) {
-
-	componentsUsed(pComponent);
 
 	EventBits_t eventBits = xEventGroupGetBits(pComponent->eventGroup);
 

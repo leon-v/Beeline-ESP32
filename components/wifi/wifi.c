@@ -21,9 +21,28 @@ static const httpPage_t configPage = {
 static char * ssid;
 static char * password;
 
-static char resetConfig  = 0;
+// static char resetConfig  = 0;
 
 static wifi_config_t wifiConfig;
+
+
+static void wifiLoadConfig() {
+
+	// AP Configuration
+	strcpy((char *) wifiConfig.ap.ssid, WIFI_AP_SSID);
+	wifiConfig.ap.max_connection	= 1;
+	wifiConfig.ap.authmode			= WIFI_AUTH_OPEN;
+
+
+	// STA Configuration
+	if (ssid != NULL){
+		strcpy((char *) wifiConfig.sta.ssid, ssid);
+	}
+
+	if (password != NULL){
+		strcpy((char *) wifiConfig.sta.password, password);
+	}
+}
 
 static void saveNVS(nvs_handle nvsHandle) {
 	componentsSetNVSString(nvsHandle, ssid, "ssid");
@@ -38,7 +57,7 @@ static void loadNVS(nvs_handle nvsHandle){
 
 	component.idleTimeout =	componentsGetNVSu32(nvsHandle, "idleTimeout", 0);
 
-	resetConfig = 1;
+	wifiLoadConfig();
 }
 
 
@@ -91,61 +110,43 @@ static esp_err_t wifiEventHandler(void *ctx, system_event_t *event){
 
 static void wifiClientInit(void) {
 
-	esp_wifi_stop();
-
-	wifi_init_config_t wifiInitConfig = WIFI_INIT_CONFIG_DEFAULT();
-
-    ESP_ERROR_CHECK(esp_wifi_init(&wifiInitConfig));
-
-    ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
-
-    if (ssid != NULL){
-		strcpy((char *) wifiConfig.sta.ssid, ssid);
-	}
-
-	if (password != NULL){
-		strcpy((char *) wifiConfig.sta.password, password);
-	}
-
 	ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
 
 	ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifiConfig));
 
 	ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_MIN_MODEM));
 
-    ESP_ERROR_CHECK(esp_wifi_start());
-
-	ESP_LOGI(component.name, "WiFI Connecting to AP");
+	ESP_LOGW(component.name, "Configured as station");
 }
 
 static void wifiAccessPointInit(void) {
 
-    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+	ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
 
-    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+	ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_AP, &wifiConfig));
 
-    wifi_config_t wifi_config = {
-    	.ap = {
-	        .ssid = WIFI_AP_SSID,
-	        .ssid_len = strlen(WIFI_AP_SSID),
-	        .max_connection = 1
-		},
-    };
-
-    wifi_config.ap.authmode = WIFI_AUTH_OPEN;
-
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
-
-    ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_config));
-
-    ESP_ERROR_CHECK(esp_wifi_start());
-
-    ESP_LOGW("WiFi Access Point", "Started. SSID: %s", WIFI_AP_SSID);
+    ESP_LOGW(component.name, "Configured as access point. SSID: %s", wifiConfig.ap.ssid);
 }
 
 static void task(void * arg) {
 
+	wifi_init_config_t wifiInitConfig = WIFI_INIT_CONFIG_DEFAULT();
+
+	ESP_ERROR_CHECK(esp_wifi_init(&wifiInitConfig));
+
 	int * pAPMode = (int *) arg;
+
+	if (* pAPMode){
+		wifiAccessPointInit();
+	}
+
+	else{
+		wifiClientInit();
+	}
+
+	ESP_LOGW(component.name, "Starting");
+
+	ESP_ERROR_CHECK(esp_wifi_start());
 
 	while(true) {
 
@@ -156,13 +157,17 @@ static void task(void * arg) {
 
 		vTaskDelay(60000 / portTICK_RATE_MS);
 
-		if (resetConfig == 1) {
-			resetConfig = 0;
-			wifiClientInit();
-		}
+		// if (resetConfig == 1) {
+		// 	resetConfig = 0;
+		// 	wifiLoadConfig();
+		// 	esp_wifi_stop();
+		// 	ESP_ERROR_CHECK(esp_wifi_start());
+		// }
 	}
 
 	ESP_LOGW(component.name, "Ending task");
+
+	ESP_LOGW(component.name, "Stopping");
 
 	esp_wifi_stop();
 
@@ -178,16 +183,6 @@ void wiFiInit(int * pAPMode) {
 	tcpip_adapter_init();
 
 	ESP_ERROR_CHECK(esp_event_loop_init(wifiEventHandler, NULL));
-
-	if (* pAPMode){
-		wifiAccessPointInit();
-		ESP_LOGW(component.name, "Starting in AP mode");
-	}
-
-	else{
-		wifiClientInit();
-		ESP_LOGW(component.name, "Starting in STA mode");
-	}
 
     component.configPage	= &configPage;
 	component.task			= &task;
