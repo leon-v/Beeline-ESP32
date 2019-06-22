@@ -151,15 +151,29 @@ static const httpPage_t adc4Page = {
 	.type	= HTTPD_TYPE_TEXT
 };
 
+static const char adc5_config_html_start[] asm("_binary_adc5_config_html_start");
+static const httpPage_t adc5Page = {
+	.uri	= "/adc5_config.html",
+	.page	= adc5_config_html_start,
+	.type	= HTTPD_TYPE_TEXT
+};
+
+static const char adc6_config_html_start[] asm("_binary_adc6_config_html_start");
+static const httpPage_t adc6Page = {
+	.uri	= "/adc6_config.html",
+	.page	= adc6_config_html_start,
+	.type	= HTTPD_TYPE_TEXT
+};
+
+static const char adc7_config_html_start[] asm("_binary_adc7_config_html_start");
+static const httpPage_t adc7Page = {
+	.uri	= "/adc7_config.html",
+	.page	= adc7_config_html_start,
+	.type	= HTTPD_TYPE_TEXT
+};
+
 static unsigned char queueItem;
 static void task(void * arg) {
-
-
-	httpServerAddPage(&adc0Page);
-	httpServerAddPage(&adc1Page);
-	httpServerAddPage(&adc2Page);
-	httpServerAddPage(&adc3Page);
-	httpServerAddPage(&adc4Page);
 
 	adcCharacterize(ADC_ATTEN_DB_0		, "0db"		, &adc0dbCharaterization);
 	adcCharacterize(ADC_ATTEN_DB_2_5	, "2.5db"	, &adc2_5dbCharaterization);
@@ -229,6 +243,15 @@ static void task(void * arg) {
 }
 
 void adcInit(void){
+
+	httpServerAddPage(&adc0Page);
+	httpServerAddPage(&adc1Page);
+	httpServerAddPage(&adc2Page);
+	httpServerAddPage(&adc3Page);
+	httpServerAddPage(&adc4Page);
+	httpServerAddPage(&adc5Page);
+	httpServerAddPage(&adc6Page);
+	httpServerAddPage(&adc7Page);
 
 	component.configPage		= &configPage;
 	component.task				= &task;
