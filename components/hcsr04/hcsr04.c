@@ -41,7 +41,10 @@ static void loadNVS(nvs_handle nvsHandle){
 	delay =			componentsGetNVSu32(nvsHandle, "delay"		, 20);
 }
 
+static unsigned int echoTimeoutCount = 0;
 void IRAM_ATTR hcsr04TimerISR(void * arg){
+
+	echoTimeoutCount++;
 
 	timer_pause(TIMER_GROUP_0, TIMER_0);
 
@@ -52,7 +55,10 @@ void IRAM_ATTR hcsr04TimerISR(void * arg){
 	xQueueSendFromISR(component.queue, &timerTicks, NULL);
 }
 
+static unsigned int echoChangeCount = 0;
 void IRAM_ATTR hcsr04EchoISR(void * arg){
+
+	echoChangeCount++;
 
 	// Pause timer first so nothing else can delay
 	timer_pause(TIMER_GROUP_0, TIMER_0);
@@ -74,11 +80,14 @@ void IRAM_ATTR hcsr04EchoISR(void * arg){
 		xQueueSendFromISR(component.queue, &timerTicks, NULL);
 	}
 }
+
+#define POWER_UP_DELAY 200
+
 void hcsr04Enable(void){
 
 	gpio_set_level(POWER_ENABLE_PIN, 1);
 
-	vTaskDelay(500 / portTICK_RATE_MS);
+	vTaskDelay(POWER_UP_DELAY / portTICK_RATE_MS);
 
 	// Setup GPIO for echo pin
 	gpio_config_t io_conf;
@@ -100,6 +109,8 @@ void hcsr04Disable(void){
     io_conf.mode = GPIO_MODE_INPUT;
     io_conf.pin_bit_mask = (0x01 << CONFIG_HCSR04_ECHO_PIN);
     gpio_config(&io_conf);
+
+    vTaskDelay(POWER_UP_DELAY / portTICK_RATE_MS);
 
 	gpio_set_level(POWER_ENABLE_PIN, 0);
 }
@@ -174,7 +185,7 @@ static void task(void * arg) {
 			continue;
 		}
 
-		ESP_LOGW(component.name, "Woke form Wake Timer");
+		ESP_LOGW(component.name, "Echo change count: %u, Echo timeout count %u.", echoChangeCount, echoTimeoutCount);
 
 		// Skip if 0 / disabled
 		if (!timerCount) {
@@ -191,7 +202,7 @@ static void task(void * arg) {
 
 		// ESP_LOGW(component.name, "Got queue item from wake timer");
 
-		int loop = samples;
+		int loop = 0;;
 		int actualSamples = 0;
 
 		static message_t message;
@@ -202,9 +213,26 @@ static void task(void * arg) {
 
 		uint64_t timerTicks;
 
-		while ((loop--) > 0) {
+		while (loop < samples) {
 
-			vTaskDelay(delay / portTICK_RATE_MS);
+			// Don't delay on the first iteration since there is no ring
+			if (loop){
+
+				// Power down the device if the ring delay is longer than the power up / down delay
+				if (delay > (POWER_UP_DELAY * 2)) {
+
+					hcsr04Disable();
+
+					vTaskDelay( (delay - (POWER_UP_DELAY * 2)) / portTICK_RATE_MS);
+
+					hcsr04Enable();
+				}
+				else{
+					vTaskDelay(delay / portTICK_RATE_MS);
+				}
+			}
+
+			loop++;
 
 			hcsr04Trigger();
 
