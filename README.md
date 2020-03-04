@@ -1,5 +1,5 @@
-# Hello World Example
+# Beeline ESP32 Version 2
 
-Starts a FreeRTOS task to print "Hello World"
-
-See the README.md file in the upper level 'examples' directory for more information about examples.
+Version 2 has / will have:
+1) A seperate web config app to save space on the device
+2) More support code to make message sink and source components easier and smaller.
