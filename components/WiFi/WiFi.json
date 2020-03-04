@@ -7,14 +7,12 @@
         "ClientSSID": {
             "label": "Client SSID",
             "inputType": "select",
-            "type": "string",
             "default": "Client SSID",
             "options": {}
         },
         "ClientPassword": {
             "label": "Client Password",
             "inputType": "password",
-            "type": "string",
             "default": "Password"
         },
         "ClientLR":{
@@ -26,13 +24,11 @@
         "APSSID": {
             "label": "Access Point SSID",
             "inputType": "text",
-            "type": "string",
             "default": "Beeline AP %ID%"
         },
         "APPassword": {
             "label": "Access Point Password",
             "inputType": "password",
-            "type": "string",
             "default": ""
         },
         "APLR":{
