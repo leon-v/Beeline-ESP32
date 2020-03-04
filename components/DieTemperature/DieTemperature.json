@@ -1,0 +1,6 @@
+{
+    "name" : "Die Temperature",
+    "description": "Message source for the ESP32 die temperature sensor.",
+    "nvsKey": 1,
+    "variables": {}
+}

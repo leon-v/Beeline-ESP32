@@ -1,194 +1,281 @@
-#include <esp_wifi.h>
-#include <esp_wifi_types.h>
-#include <esp_event_loop.h>
+#include <Component.h>
 
-#include "components.h"
-#include "device.h"
+#include <WiFi.h>
 
-static component_t component = {
-	.name = "WiFi",
-};
+#define TAG "WiFi"
 
-static const char wifi_config_html_start[] asm("_binary_wifi_config_html_start");
-static const httpPage_t configPage = {
-	.uri	= "/wifi_config.html",
-	.page	= wifi_config_html_start,
-	.type	= HTTPD_TYPE_TEXT
-};
+static wifi_config_t wifiClientConfig;
+static wifi_config_t wifiAccessPointConfig;
 
-#define WIFI_AP_SSID "Beeline Configuration AP"
+static wifi_scan_config_t scanConfig;
 
-static char * ssid;
-static char * password;
+#define MODE_AP_CLIENT 1
+#define MODE_AP 2
+#define MODE_CLIENT 3
 
-// static char resetConfig  = 0;
+#define STATE_SCAN 1
+#define STATE_RECONNECT 2
 
-static wifi_config_t wifiConfig;
+static cJSON * statusExtra = NULL;
+static uint8_t state = STATE_SCAN;
 
+static esp_err_t wifiEventHandler(void * context, system_event_t *event) {
 
-static void wifiLoadConfig() {
+	pComponent_t pComponent = (pComponent_t) context;
 
-	// AP Configuration
-	strcpy((char *) wifiConfig.ap.ssid, WIFI_AP_SSID);
-	wifiConfig.ap.max_connection	= 1;
-	wifiConfig.ap.authmode			= WIFI_AUTH_OPEN;
-
-
-	// STA Configuration
-	if (ssid != NULL){
-		strcpy((char *) wifiConfig.sta.ssid, ssid);
-	}
-
-	if (password != NULL){
-		strcpy((char *) wifiConfig.sta.password, password);
-	}
-}
-
-static void saveNVS(nvs_handle nvsHandle) {
-	componentsSetNVSString(nvsHandle, ssid, "ssid");
-	componentsSetNVSString(nvsHandle, password, "password");
-
-	componentsSetNVSu32(nvsHandle, "idleTimeout", component.idleTimeout);
-}
-
-static void loadNVS(nvs_handle nvsHandle){
-	ssid = componentsGetNVSString(nvsHandle, ssid, "ssid", "SSID");
-	password = componentsGetNVSString(nvsHandle, password, "password", "Password");
-
-	component.idleTimeout =	componentsGetNVSu32(nvsHandle, "idleTimeout", 0);
-
-	wifiLoadConfig();
-}
-
-
-
-static esp_err_t wifiEventHandler(void *ctx, system_event_t *event){
+	cJSON * mode;
+	ESP_ERROR_CHECK(componentSettingsGet(pComponent, "Mode", &mode));
 
 	switch(event->event_id) {
 
+		/************* STA ***************/
 		case SYSTEM_EVENT_STA_START:
-			ESP_LOGI(component.name, "SYSTEM_EVENT_STA_START");
-			esp_wifi_connect();
+			ESP_LOGI(TAG, "SYSTEM_EVENT_STA_START");
+			componentSettingsSetStatus(pComponent, "warning", "Started, not conencting", statusExtra);
+        	break;
+		
+		case SYSTEM_EVENT_STA_CONNECTED:
+			ESP_LOGI(TAG, "SYSTEM_EVENT_STA_CONNECTED");
+			componentSettingsSetStatus(pComponent, "success", "Connected, waiting for IP", statusExtra);
         	break;
 
     	case SYSTEM_EVENT_STA_GOT_IP:
-    		ESP_LOGI(component.name, "SYSTEM_EVENT_STA_GOT_IP");
-       		componentSetReady(&component);
+    		ESP_LOGI(TAG, "SYSTEM_EVENT_STA_GOT_IP");
+
+			char * ipAddress = ip4addr_ntoa(&event->event_info.got_ip.ip_info.ip);
+			cJSON_ReplaceItemInObject(statusExtra, "ipAddress", cJSON_CreateString(ipAddress));
+			
+			componentSettingsSetStatus(pComponent, "success", "Connected, got IP", statusExtra);
         	break;
 
         case SYSTEM_EVENT_STA_DISCONNECTED:
-        	ESP_LOGI(component.name, "SYSTEM_EVENT_STA_DISCONNECTED");
-        	componentSetNotReady(&component);
-        	esp_wifi_connect();
+        	ESP_LOGI(TAG, "SYSTEM_EVENT_STA_DISCONNECTED");
+			cJSON_ReplaceItemInObject(statusExtra, "ipAddress", cJSON_CreateString(""));
+			componentSettingsSetStatus(pComponent, "danger", "Disconnected", statusExtra);
+			state = STATE_RECONNECT;
+
         	break;
+		
+		case SYSTEM_EVENT_STA_STOP:
+			ESP_LOGI(TAG, "SYSTEM_EVENT_STA_STOP");
+			componentSettingsSetStatus(pComponent, "danger", "Stopped", statusExtra);
+			break;
+
+
+		/************* AP ***************/
+		case SYSTEM_EVENT_AP_START:
+			ESP_LOGI(TAG, "SYSTEM_EVENT_AP_START");
+			break;
 
 		case SYSTEM_EVENT_AP_STACONNECTED:
+			ESP_LOGI(TAG, "SYSTEM_EVENT_AP_STACONNECTED "MACSTR, MAC2STR(event->event_info.sta_connected.mac));
+			break;
 
-			ESP_LOGI(component.name, "SYSTEM_EVENT_AP_STACONNECTED "MACSTR, MAC2STR(event->event_info.sta_connected.mac));
-			deviceLog("AP STA Connected "MACSTR, MAC2STR(event->event_info.sta_connected.mac));
-			componentSetReady(&component);
+		case SYSTEM_EVENT_AP_STAIPASSIGNED:
+			ESP_LOGI(TAG, "SYSTEM_EVENT_AP_STAIPASSIGNED");
 			break;
 
 		case SYSTEM_EVENT_AP_STADISCONNECTED:
-			ESP_LOGI(component.name, "SYSTEM_EVENT_AP_STADISCONNECTED "MACSTR, MAC2STR(event->event_info.sta_disconnected.mac));
-			break;
-
-		case SYSTEM_EVENT_AP_START:
-			ESP_LOGI(component.name, "SYSTEM_EVENT_AP_START");
+			ESP_LOGI(TAG, "SYSTEM_EVENT_AP_STADISCONNECTED "MACSTR, MAC2STR(event->event_info.sta_disconnected.mac));
 			break;
 
 		case SYSTEM_EVENT_AP_STOP:
-			ESP_LOGI(component.name, "SYSTEM_EVENT_AP_STOP");
+			ESP_LOGI(TAG, "SYSTEM_EVENT_AP_STOP");
+			break;
+		
+
+		/************* SCAN ***************/
+		case SYSTEM_EVENT_SCAN_DONE:
+			ESP_LOGI(TAG, "SYSTEM_EVENT_SCAN_DONE");
+
+			wiFiScanBuildOptions(pComponent);
+			
+			esp_wifi_scan_stop();
+
+			ESP_ERROR_CHECK(esp_wifi_connect());
+
 			break;
 
 		default:
+			ESP_LOGE(TAG, "WiFi event_id %d not found", event->event_id);
 			break;
 	}
 
 	return ESP_OK;
 }
 
-static void wifiClientInit(void) {
+void wiFiSetupAP(pComponent_t pComponent){
 
-	ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+	cJSON * longRange;
+	ESP_ERROR_CHECK(componentSettingsGet(pComponent, "APLR", &longRange));
 
-	ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifiConfig));
+	if (longRange->valueint) {
+		ESP_ERROR_CHECK(
+			esp_wifi_set_protocol(WIFI_IF_AP, WIFI_PROTOCOL_LR)
+		);
+	}
+	else{
+		ESP_ERROR_CHECK(
+			esp_wifi_set_protocol(WIFI_IF_AP, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N)
+		);
+	}
 
-	ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_MIN_MODEM));
-
-	ESP_LOGW(component.name, "Configured as station");
+	wiFiAccessPointSetConfig(pComponent, &wifiAccessPointConfig);
 }
 
-static void wifiAccessPointInit(void) {
+void wiFiSetupClient(pComponent_t pComponent) {
 
-	ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
+	wiFiClientSetConfig(pComponent, &wifiClientConfig);
 
-	ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_AP, &wifiConfig));
+	cJSON * longRange;
+	ESP_ERROR_CHECK(componentSettingsGet(pComponent, "ClientLR", &longRange));
 
-    ESP_LOGW(component.name, "Configured as access point. SSID: %s", wifiConfig.ap.ssid);
+	if (longRange->valueint) {
+		ESP_ERROR_CHECK(
+			esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_LR)
+		);
+	}
+	else{
+		ESP_ERROR_CHECK(
+			esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N)
+		);
+	}
+}
+
+void wiFiSetup(pComponent_t pComponent) {
+
+	cJSON * mode;
+	ESP_ERROR_CHECK(componentSettingsGet(pComponent, "Mode", &mode));
+
+	switch (mode->valueint) {
+
+		case MODE_AP_CLIENT:
+			ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
+			wiFiSetupAP(pComponent);
+			wiFiSetupClient(pComponent);
+		break;
+
+		case MODE_AP:
+			ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
+			wiFiSetupAP(pComponent);
+		break;
+
+		case MODE_CLIENT:
+			ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+			wiFiSetupClient(pComponent);
+		break;
+
+		default:
+			ESP_LOGE(TAG, "Undnown Mode: %d", mode->valueint);
+		break;
+	}
+}
+
+void wifiInit(pComponent_t pComponent) {
+
+	statusExtra = cJSON_CreateObject();
+	cJSON_AddStringToObject(statusExtra, "ipAddress", "");
+	componentSettingsSetStatus(pComponent, "secondary", "Initialising", statusExtra);
+
+	printf("WiFi - Initialisation - Start.\n");
+
+	// Make sure we have options for WiFi SSIDs and that the current SSID is set
+	ESP_ERROR_CHECK(wiFiScanSSIDOptionsInit(pComponent));
+
+	ESP_ERROR_CHECK(esp_event_loop_init(wifiEventHandler, pComponent));
+
+	wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+
+    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+
+	ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
+
+	wiFiSetup(pComponent);
+
+	wiFiScanSetConfig(pComponent, &scanConfig);
+
+	ESP_ERROR_CHECK(esp_wifi_start());
+
+	cJSON * mode;
+	ESP_ERROR_CHECK(componentSettingsGet(pComponent, "Mode", &mode));
+
+	switch (mode->valueint) {
+
+		case MODE_AP_CLIENT:
+		case MODE_AP:
+			cJSON_ReplaceItemInObject(statusExtra, "ipAddress", cJSON_CreateString("192.168.4.1"));
+			componentSettingsSetStatus(pComponent, "secondary", "Starting AP", statusExtra);
+		break;
+
+		case MODE_CLIENT:
+			ESP_ERROR_CHECK(esp_wifi_connect());
+		break;
+		
+		default:
+			ESP_LOGE(TAG, "Undnown Mode: %d", mode->valueint);
+		break;
+	}
+
+	ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_MIN_MODEM));
 }
 
 static void task(void * arg) {
 
-	wifi_init_config_t wifiInitConfig = WIFI_INIT_CONFIG_DEFAULT();
+	// pComponent_t pComponent = (pComponent_t) arg;
+	esp_err_t espError;
 
-	ESP_ERROR_CHECK(esp_wifi_init(&wifiInitConfig));
+	while (true) {
 
-	int * pAPMode = (int *) arg;
+		switch (state) {
 
-	if (* pAPMode){
-		wifiAccessPointInit();
-	}
+			case STATE_SCAN:
 
-	else{
-		wifiClientInit();
-	}
+				espError = esp_wifi_scan_start(&scanConfig, false);
 
-	ESP_LOGW(component.name, "Starting");
+				if (espError == ESP_OK) {
+					state = STATE_RECONNECT;
+				}
+			break;
 
-	ESP_ERROR_CHECK(esp_wifi_start());
-
-	while(true) {
-
-		if (componentsEndRequested(&component) == ESP_OK) {
-			ESP_LOGW(component.name, "Ending loop.");
+			case STATE_RECONNECT:
+				ESP_ERROR_CHECK(esp_wifi_connect());
 			break;
 		}
+		
 
-		vTaskDelay(60000 / portTICK_RATE_MS);
-
-		// if (resetConfig == 1) {
-		// 	resetConfig = 0;
-		// 	wifiLoadConfig();
-		// 	esp_wifi_stop();
-		// 	ESP_ERROR_CHECK(esp_wifi_start());
-		// }
+		vTaskDelay(10000 / portTICK_PERIOD_MS);
 	}
 
-	ESP_LOGW(component.name, "Ending task");
-
-	ESP_LOGW(component.name, "Stopping");
-
-	esp_wifi_stop();
-
-	componentsSetEnded(&component);
-
 	vTaskDelete(NULL);
-
 	return;
 }
 
-void wiFiInit(int * pAPMode) {
+static void postSave(pComponent_t pComponent) {
 
-	tcpip_adapter_init();
+	// TODO Make one single init / de-init function that is used by settings save and main init
 
-	ESP_ERROR_CHECK(esp_event_loop_init(wifiEventHandler, NULL));
+	ESP_ERROR_CHECK(esp_wifi_stop());
 
-    component.configPage	= &configPage;
-	component.task			= &task;
-	component.taskArg		= pAPMode;
-	component.loadNVS		= &loadNVS;
-	component.saveNVS		= &saveNVS;
+	wiFiSetup(pComponent);
 
-	componentsAdd(&component);
+	ESP_ERROR_CHECK(esp_wifi_start());
+
+	cJSON * mode;
+	ESP_ERROR_CHECK(componentSettingsGet(pComponent, "Mode", &mode));
+
+	state = STATE_SCAN;
+	
+	ESP_LOGW(TAG, "Saved");
+}
+
+extern const uint8_t settingsFile[] asm("_binary_WiFi_json_start");
+static component_t component = {
+	.settingsFile	= (char *) settingsFile,
+	.task			= &task,
+    .init           = &wifiInit,
+	.postSave		= &postSave
+};
+
+pComponent_t wiFiGetComponent(void) {
+	return &component;
 }

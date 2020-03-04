@@ -1,0 +1,12 @@
+{
+    "name" : "NTP Client",
+    "description": "Provides time services updatef from the provided host",
+    "nvsKey": 2,
+    "variables": {
+        "Host": {
+            "label": "Host Name",
+            "type": "string",
+            "default": "pool.ntp.org"
+        }
+    }
+}

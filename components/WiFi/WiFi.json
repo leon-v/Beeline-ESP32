@@ -1,0 +1,58 @@
+{
+    "name" : "WiFi",
+    "description": "Provides WiFi network access.",
+    "nvsKey": 170,
+    "statusPoll": 3000,
+    "variables": {
+        "ClientSSID": {
+            "label": "Client SSID",
+            "inputType": "select",
+            "type": "string",
+            "default": "Client SSID",
+            "options": {}
+        },
+        "ClientPassword": {
+            "label": "Client Password",
+            "inputType": "password",
+            "type": "string",
+            "default": "Password"
+        },
+        "ClientLR":{
+            "label": "Client Long Range",
+            "inputType": "checkbox",
+            "type": "integer",
+            "default": 0
+        },
+        "APSSID": {
+            "label": "Access Point SSID",
+            "inputType": "text",
+            "type": "string",
+            "default": "Beeline AP %ID%"
+        },
+        "APPassword": {
+            "label": "Access Point Password",
+            "inputType": "password",
+            "type": "string",
+            "default": ""
+        },
+        "APLR":{
+            "label": "AP Long Range",
+            "inputType": "checkbox",
+            "type": "integer",
+            "default": 0
+        },
+        "Mode": {
+            "inputType": "select",
+            "type": "integer",
+            "bits": 8,
+            "unsigned": true,
+            "default": 1,
+            "options": {
+                "1": "Access Point & Client",
+                "2": "Access Point Only",
+                "3": "Client Only"
+            }
+        }
+    },
+    "accessPoints": []
+}

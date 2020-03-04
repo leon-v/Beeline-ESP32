@@ -3,7 +3,7 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := ESP32
+PROJECT_NAME := Beeline-ESP32
 
 include $(IDF_PATH)/make/project.mk
 

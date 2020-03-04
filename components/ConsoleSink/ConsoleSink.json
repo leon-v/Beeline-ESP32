@@ -1,0 +1,4 @@
+{
+    "name" : "Console Sink",
+    "description": "Dummy message sink that will dump messages to the console using ESP_LOG"
+}

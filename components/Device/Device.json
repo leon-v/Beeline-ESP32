@@ -1,0 +1,11 @@
+{
+    "name" : "Device",
+    "description": "Provides general device configuration.",
+    "nvsKey": 1,
+    "variables": {
+        "Name": {
+            "type": "string",
+            "default": "Device ID %ID%"
+        }
+    }
+}

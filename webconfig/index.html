@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<!-- Required meta tags -->
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+
+	<title>Beeline ESP32 Config</title>
+
+	<!-- Bootstrap CSS -->
+	<link rel="stylesheet" href="bootstrap-4.3.1-dist/css/bootstrap.min.css">
+
+	<!-- Optional JavaScript -->
+	<!-- jQuery first, then Popper.js, then Bootstrap JS -->
+	<script src="jquery-3.4.1/jquery-3.4.1.js"></script>
+	<script src="popper.min/popper.min.js"></script>
+	<script src="bootstrap-4.3.1-dist/js/bootstrap.js"></script>
+
+	<link rel="stylesheet" href="style.css">
+	<script src="functions.js"></script>
+	<script src="javascript.js"></script>
+</head>
+
+<body>
+	<nav class="navbar navbar-expand-md navbar-dark bg-dark mb-4">
+
+		<a class="navbar-brand" href="#home">Beeline</a>
+
+		<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCollapse"
+			aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+			<span class="navbar-toggler-icon"></span>
+		</button>
+		<div class="collapse navbar-collapse" id="navbarCollapse">
+			<ul class="navbar-nav mr-auto">
+
+				<li class="nav-item active">
+					<a class="nav-link mainMenuItem" href="#devices" data-container="devices">Device Search</a>
+				</li>
+
+				<li class="nav-item active">
+					<a class="nav-link mainMenuItem" href="#configure" data-container="configure">Device Configure</a>
+				</li>
+			</ul>
+		</div>
+	</nav>
+
+	<main role="main" class="container home-container current">
+		Home
+	</main>
+
+	<main role="main" class="container devices-container">
+		<div class="jumbotron">
+
+			<h1>Device Search</h1>
+
+			<form class="mb-3 ipScanForm">
+
+				<h4>Scan Presents</h4>
+				<div class="input-group ipPreset">
+					<button type="button" class="btn btn-primary isPreset" data-ip1="192" data-ip2="168" data-ip3="4"
+						data-range-min="1" data-range-max="1"
+						title="Use this IP when you are connection to the device in AP / Config mode.">Config
+						AP</button>&nbsp;&nbsp;
+					<button type="button" class="btn btn-primary isSave" data-save="true"
+						data-names="ip1,ip2,ip3,rangeMin,rangeMax"
+						title="Save this IP and range to browser storage.">Save</button>&nbsp;&nbsp;
+					<button type="button" class="btn btn-primary isLoad" data-load="true"
+						title="Load the IP and range from local storege.">Load</button>
+				</div>
+
+
+				<br>
+				<h4>IP Address Prefix</h4>
+				<div class="input-group ipPrefix">
+					<input type="text" name="ip1" class="form-control ip number" placeholder="192" aria-label="192"
+						value="">
+					<input type="text" class="form-control ip dot" value="." disabled>
+					<input type="text" name="ip2" class="form-control ip number" placeholder="168" aria-label="168"
+						value="">
+					<input type="text" class="form-control ip dot" value="." disabled>
+					<input type="text" name="ip3" class="form-control ip number" placeholder="0" aria-label="0"
+						value="">
+					<input type="text" class="form-control ip dot" value="." disabled>
+					<input type="text" class="form-control ip number" placeholder="XXX" aria-label="XXX" disabled>
+				</div>
+
+				<br>
+				<h4 class="clear">Suffix Range</h4>
+				<div class="input-group">
+					<input type="text" name="rangeMin" class="form-control ip number" placeholder="0" aria-label="0"
+						value="1">
+					<input type="text" class="form-control ip suffixTo" value=" to " disabled>
+					<input type="text" name="rangeMax" class="form-control ip number" placeholder="0" aria-label="0"
+						value="255">
+				</div>
+
+
+			</form>
+			<button type="button" class="btn btn-primary startScan">Scan</button>
+
+			<div class="scanResults hidden">
+				<hr>
+				<p>Scanning Network: <span class="scanProgress">0%</span></p>
+				<h3>Found Devices</h3>
+				<table class="table">
+					<tbody>
+						<tr class="heading">
+							<th>IP</th>
+							<th>Version</th>
+							<th>Name</th>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</main>
+
+	<main role="main" class="container configure-container">
+		<div class="jumbotron">
+
+			<h1>Configure</h1>
+
+			<form class="mb-3 ipAddressForm">
+
+				<h4>IP Address</h4>
+
+				<div class="input-group ipAddress">
+					<input type="text" name="ip1" class="form-control ip number" placeholder="192" aria-label="192">
+					<input type="text" class="form-control ip dot" value="." disabled>
+					<input type="text" name="ip2" class="form-control ip number" placeholder="168" aria-label="168">
+					<input type="text" class="form-control ip dot" value="." disabled>
+					<input type="text" name="ip3" class="form-control ip number" placeholder="0" aria-label="0">
+					<input type="text" class="form-control ip dot" value="." disabled>
+					<input type="text" name="ip4" class="form-control ip number" placeholder="10" aria-label="10">
+				</div>
+			</form>
+			<button type="button" class="btn btn-primary connect">Load Settings.</button>
+
+		</div>
+
+		<div class="jumbotron components">
+
+			<h1>Components</h1>
+
+			<div class="panel-group" id="components">
+
+				<div class="panel">
+					<p>Click "Request Configuration" to load the devices configuration here.</p>
+				</div>
+
+				<div class="template" style="display:none;">
+					<div class="panel-heading">
+						<h5 class="panel-title">
+							<a class="title" data-toggle="collapse" data-parent="#components" href="#alias">Title</a>
+							<span class="status">Loading...</span>
+						</h5>
+						<span class="description">Description loading...</span>
+					</div>
+
+					<div id="alias" class="panel-collapse collapse in">
+						<form>
+							<div class="content"></div>
+							<br>
+							<button type="button" class="btn btn-primary save" style="display:none">Save</button>
+						</form>
+					</div>
+					<hr>
+				</div>
+			</div>
+		</div>
+	</main>
+	<div class="modal fade bd-example-modal-lg" tabindex="-1" role="dialog" id="modal" >
+		<div class="modal-dialog modal-lg" role="document">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title"></h5>
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times;</span>
+					</button>
+				</div>
+				<div class="modal-body"></div>
+				<div class="modal-footer"></div>
+			</div>
+		</div>
+	</div>
+	
+	<script type="text/javascript">
+		showPage();
+		loadPreset();
+	</script>
+</body>
+
+</html>
