@@ -1,5 +1,7 @@
 #include "Component.h"
 
+#include "driver/gpio.h"
+
 // TODO Make settings support array of component names so we can store the routing values in NVS
 // Avoids IDs since they change in development
 // Maybe some string with a special terminator and use strtok
@@ -157,8 +159,6 @@ esp_err_t componentSettingsLoadValue(pComponent_t pComponent, cJSON * variable, 
 
             char * defaultValueString = str_replace(defaultValue->valuestring, "%ID%", uniqueId);
 
-            ESP_LOGW(TAG, "Default B: %s, A: %s", defaultValue->valuestring, defaultValueString);
-
             defaultValue = cJSON_CreateString(defaultValueString);
 
             cJSON_ReplaceItemInObject(variable, "default", defaultValue);
@@ -248,6 +248,11 @@ esp_err_t componentSettingsLoadValues(pComponent_t pComponent) {
         ESP_LOGW(TAG, "Settig new value and resetting defaults for %s in %s.", pComponent->name, __func__);
     }
 
+    if (!gpio_get_level(GPIO_NUM_0)) {
+        ESP_LOGW(TAG, "Resetting NVS due to button pressed");
+        pComponent->resetDefaults = 1;
+    }
+
     if (espError != ESP_OK) {
         ESP_LOGE(TAG, "Failed to load or save NVS value for 'nvsKey'");
         nvs_close(nvsHandle);
@@ -295,6 +300,24 @@ esp_err_t componentSettingsInit(void) {
     uniqueId[4] = 'a' + ((mac[5] >> 0) & 0x0F);
     uniqueId[5] = 'a' + ((mac[5] >> 4) & 0x0F);
     uniqueId[6] = 0;
+
+
+    gpio_config_t io_conf = {
+        .mode           = GPIO_MODE_INPUT,
+        .pull_up_en     = GPIO_PULLUP_ENABLE,
+        .pin_bit_mask   = GPIO_SEL_0
+    };
+
+    gpio_config(&io_conf);
+
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
+
+    return ESP_OK;
+}
+
+esp_err_t componentSettingsPostInit(void) {
+
+    // gpio_reset_pin(GPIO_NUM_0);
 
     return ESP_OK;
 }

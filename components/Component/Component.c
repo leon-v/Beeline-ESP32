@@ -79,6 +79,8 @@ void componentsInit(void){
         componentEventInit(pComponent);
     }
 
+    ESP_ERROR_CHECK(componentSettingsPostInit());
+
     for (int index = 0;index < componentsLength;index++) {
 
         pComponent_t pComponent = componenetGetByIndex(index);

@@ -11,7 +11,6 @@
 #define TAG "main"
 
 void app_main() {
-    printf("Hello world!\n");
 
      // Initialize NVS
     esp_err_t err = nvs_flash_init();

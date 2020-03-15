@@ -4,6 +4,7 @@
 #include "Component.h"
 
 esp_err_t componentSettingsInit(void);
+esp_err_t componentSettingsPostInit(void);
 esp_err_t componentSettingsSetValues(pComponent_t pComponent, cJSON * values);
 esp_err_t componentSettingsGet(pComponent_t pComponent, char * variableName, cJSON * * pValue);
 esp_err_t componentSettingsLoadValues(pComponent_t pComponent);
