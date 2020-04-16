@@ -119,28 +119,28 @@ $(document).on('click', '.devices-container .ipPreset button.isSave', function()
 
 });
 
-function configureRenderComponentInput(parent, variable) {
+function configureRenderComponentInput(parent, setting) {
 
 	var input = $('<input class="form-control" aria-describedby="basic-addon2">');
 	parent.append(input);
 
 
-	input.val(variable.settings.value);
-	input.attr('name', variable.name);
-	input.attr('type', variable.settings.inputType || 'text');
+	input.val(setting.value);
+	input.attr('name', setting.name);
+	input.attr('type', setting.inputType || 'text');
 }
 
-function configureRenderComponentSelect(parent, variable) {
+function configureRenderComponentSelect(parent, settings) {
 
 	var select = $('<select class="form-control" aria-describedby="basic-addon2"></select>');
-	select.attr('name', variable.name);
+	select.attr('name', settings.name);
 
 	var option = $('<option></option>');
-	option.text('Select ' + variable.name);
+	option.text('Select ' + settings.name);
 	option.attr('disabled', 'disabled');
 	select.append(option);
 
-	var options = variable.settings.options || {};
+	var options = settings.options || {};
 
 	for (optionKey in options) {
 
@@ -154,7 +154,7 @@ function configureRenderComponentSelect(parent, variable) {
 		option.attr('value', optionKey);
 		option.html(optionValue);
 
-		if (optionKey == variable.settings.value) {
+		if (optionKey == settings.value) {
 			option.attr('selected', 'selected');
 		}
 
@@ -215,66 +215,69 @@ function configureRenderComponentCheckbox(parent, variable) {
 	parent.append(formCheck);
 }
 
-function configureRenderComponentVariable(table, variable) {
+function configureRenderComponentVariable(table, setting) {
 
 	var row = $('<tr></tr>');
 	table.append(row);
 
 	var label = $('<th></th>');
 	row.append(label);
-	label.text(variable.settings.label || variable.name);
+	label.text(setting.label || setting.name);
 	label.css('min-width', '100px');
 
 	var cell = $('<td></td>');
 
 	row.append(cell);
 
-	var type = variable.settings.inputType || variable.settings.type;
+	var defaultType = 'text';
+
+	if (setting.options || null) {
+		defaultType = 'select';
+	}
+
+	var type = setting.inputType || defaultType;
 	
 	switch (type) {
 
 		case 'select':
-			configureRenderComponentSelect(cell, variable);
+			configureRenderComponentSelect(cell, setting);
 		break;
 
 		case 'multiCheckbox':
-			configureRenderComponentMultiCheckbox(cell, variable);
+			configureRenderComponentMultiCheckbox(cell, setting);
 		break;
 
 		case 'checkbox':
-			configureRenderComponentCheckbox(cell, variable);
+			configureRenderComponentCheckbox(cell, setting);
 		break;
 
 		default:
 		case 'text':
 		case 'password':
 		case 'string':
-			configureRenderComponentInput(cell, variable);
+			configureRenderComponentInput(cell, setting);
 		break;
 	}
 }
 
-function configureRenderComponentSettings(panel, settings, ipAddress){
+function configureRenderComponentSettings(panel, settingsResult, ipAddress){
 
 	var panelTable = $('<table></table>');
 
 	panel.content.append(panelTable);
 
 	panel.description = panel.find('.description');
-	panel.description.text(settings.description);
+	panel.description.text(settingsResult.description);
 
-	var variables = settings.variables;
+	var settings = settingsResult.settings;
 
-	panel.form.data('variables', variables);
+	panel.form.data('settings', settings);
 
-	for (variableName in variables) {
+	for (index in settings) {
 
-		var variable = {
-			name: variableName,
-			settings:variables[variableName]
-		};
+		var setting = settings[index];
 
-		configureRenderComponentVariable(panelTable, variable);
+		configureRenderComponentVariable(panelTable, setting);
 	}
 
 	if (settings.statusPoll) {
@@ -334,7 +337,7 @@ function configureRenderComponent(name, container, ipAddress) {
 
 							var post = {vales: { Mode: 2 } };
 
-							postToDevice(ipAddress, '/component/WiFi', post, function(result) {
+							postToDevice(ipAddress, '/modules/WiFi', post, function(result) {
 
 								if (!result) {
 									alert("Failed to set Wifi Client mode");
@@ -379,28 +382,22 @@ function configureRenderComponent(name, container, ipAddress) {
 	}
 
 
-	getFromDevice(ipAddress, '/component/' + encodeURIComponent(name), callback);
+	getFromDevice(ipAddress, '/modules/' + encodeURIComponent(name), callback);
 
 	panel.show();
 }
 
-function configureRenderComponents(ipAddress, components) {
+function configureRenderComponents(ipAddress, modules) {
 
-	if (!components) {
-		return;
-	}
-
-	var componentsArray = components.components;
-
-	if (!componentsArray) {
+	if (!modules) {
 		return;
 	}
 
 	var container = $('.configure-container .components');
 
-	for (index in componentsArray) {
+	for (index in modules) {
 
-		var name = componentsArray[index];
+		var name = modules[index];
 
 		configureRenderComponent(name, container, ipAddress);
 	}
@@ -436,7 +433,7 @@ $(document).on('click', '.configure-container .connect', function() {
 
 	var button = this;
 
-	getFromDevice(ipAddress, '/components', function(componentsResult) {
+	getFromDevice(ipAddress, '/modules', function(componentsResult) {
 
 		removeLoadingFrom(components);
 
@@ -528,28 +525,33 @@ $(document).on('click', '.configure-container .save', function(){
 
 	addLoadingTo(form);
 
-	var variables = form.data('variables');
+	var settings = form.data('settings');
 
-	var post = {
-		values: form.serializeArray()
-	};
+	var values = buildFormValuesArray(form.serializeArray());
 
-	post.values = buildFormValuesArray(post.values);
+	console.log(settings, values);
 
-	for (variableName in post.values) {
+	for (index in settings) {
 
-		var variable = variables[variableName];
+		var setting = settings[index];
 
-		switch (variable.type) {
-			case 'integer':
-				post.values[variableName] = parseInt(post.values[variableName]);
-			break;
-		}
+		var value = values[setting.name];
+
+		// Save the value as the same type as the current value to preserve types
+		setting.value = convertToTypeOf(setting.value, value);
 	}
 
-	postToDevice(ipAddress, '/component/' + encodeURIComponent(name), post, function(result) {
+	postToDevice(ipAddress, '/modules/' + encodeURIComponent(name), settings, function(result) {
 
 		configureSaveComponent(form, result);
 	});
 
 });
+
+function convertToTypeOf(typedVar, input) {
+	return {
+		'boolean': (v) => (v == 'true') || (v == 1), // eslint-disable-line eqeqeq
+		'number': Number,
+		'string': String,
+	}[typeof typedVar](input);
+};

@@ -332,7 +332,7 @@ function startStatusPoll(ipAddress, panel, name, delay) {
 		}, delay);
 	}
 
-	getFromDevice(ipAddress, '/component/' + encodeURIComponent(name) + '/status', callback);
+	getFromDevice(ipAddress, '/modules/' + encodeURIComponent(name) + '/status', callback);
 }
 
 $(document).on('show.bs.modal', '#modal', function (event) {
