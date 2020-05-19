@@ -8,6 +8,8 @@
 #include "HTTPServer.hpp"
 #include "Modules.hpp"
 #include "WiFi.hpp"
+#include "TestSource.hpp"
+#include "TestSink.hpp"
 #include "Device.hpp"
 
 static const char *TAG = "Beeline System";
@@ -68,6 +70,12 @@ extern "C" void app_main(void) {
 
 	static Device device;
 	ESP_ERROR_CHECK(modules.add(&device));
+
+	static TestSource testSource;
+	ESP_ERROR_CHECK(modules.add(&testSource));
+
+	static TestSink testSink;
+	ESP_ERROR_CHECK(modules.add(&testSink));
 
 	ESP_ERROR_CHECK(modules.start());
 

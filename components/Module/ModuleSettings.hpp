@@ -14,24 +14,30 @@ class ModuleSettings{
 		NVS nvs;
 		char *name;
 		bool initalised = false;
-		char uniqueId[8];
+		char * uniqueIdValue;
+		char * uniqueIdKey = (char *) "[UID]";
 
 	public:
-		const cJSON *settings;
-		const cJSON *json;
+		cJSON *settings;
+		cJSON *json;
+		cJSON * routing;
 
 		ModuleSettings() {
 
 			uint8_t mac[6];
 			esp_read_mac(mac, ESP_MAC_WIFI_STA);
 
-			this->uniqueId[0] = 'a' + ((mac[3] >> 0) & 0x0F);
-			this->uniqueId[1] = 'a' + ((mac[3] >> 4) & 0x0F);
-			this->uniqueId[2] = 'a' + ((mac[4] >> 0) & 0x0F);
-			this->uniqueId[3] = 'a' + ((mac[4] >> 4) & 0x0F);
-			this->uniqueId[4] = 'a' + ((mac[5] >> 0) & 0x0F);
-			this->uniqueId[5] = 'a' + ((mac[5] >> 4) & 0x0F);
-			this->uniqueId[6] = 0;
+			static char uniqueIdValue[8];
+
+			uniqueIdValue[0] = 'a' + ((mac[3] >> 0) & 0x0F);
+			uniqueIdValue[1] = 'a' + ((mac[3] >> 4) & 0x0F);
+			uniqueIdValue[2] = 'a' + ((mac[4] >> 0) & 0x0F);
+			uniqueIdValue[3] = 'a' + ((mac[4] >> 4) & 0x0F);
+			uniqueIdValue[4] = 'a' + ((mac[5] >> 0) & 0x0F);
+			uniqueIdValue[5] = 'a' + ((mac[5] >> 4) & 0x0F);
+			uniqueIdValue[6] = 0;
+
+			this->uniqueIdValue = uniqueIdValue;
 		}
 	
 		esp_err_t loadFile(const char * file) {
@@ -57,8 +63,16 @@ class ModuleSettings{
 
 			this->settings = cJSON_GetObjectItemCaseSensitive(this->json, "settings");
 
+			if (!this->settings) {
+				this->settings = cJSON_CreateArray();
+				cJSON_AddItemToObject(this->json, "settings", this->settings);
+				this->settings = cJSON_GetObjectItemCaseSensitive(this->json, "settings");
+			}
+
+			ESP_LOGW(this->name, "Setting Set");
+
 			if (!cJSON_IsArray(this->settings)) {
-				ESP_LOGE(this->name, "Settings missing in json");
+				ESP_LOGE(this->name, "Settings must be an array in json");
 				return ESP_FAIL;
 			}
 
@@ -67,6 +81,16 @@ class ModuleSettings{
 			this->initalised = true;
 
 			return ESP_OK;
+		}
+
+		void addSetting(cJSON * setting) {
+
+			if (!this->settings) {
+				ESP_LOGE(this->name, "settings not initalised before adding setting.");
+				ESP_ERROR_CHECK(ESP_FAIL);
+			}
+
+			cJSON_AddItemReferenceToArray(this->settings, setting);
 		}
 
 		cJSON * cloneJSON(cJSON * json) {
@@ -203,7 +227,28 @@ class ModuleSettings{
 
 		void setValue(char * name, cJSON * value) {
 
+			if (!value) {
+				ESP_LOGE(this->name, "Value passed to setValue is invalid");
+				return;
+			}
+
 			cJSON *newValue = this->cloneJSON(value);
+
+			if (!newValue) {
+				ESP_LOGE(this->name, "Failed to clone value in setValue");
+				return;
+			}
+
+			// If new value is a string, perform replacements
+			if (cJSON_IsString(newValue)) {
+
+				char * replaced = this->stringReplace(newValue->valuestring, this->uniqueIdKey, this->uniqueIdValue);
+
+				if (replaced) {
+					cJSON_Delete(newValue);
+					newValue = cJSON_CreateString(replaced);
+				}
+			}
 
 			cJSON * setting = this->getSetting(name);
 
@@ -306,7 +351,7 @@ class ModuleSettings{
 		}
 
 		// You must free the result if result is non-NULL.
-		char *replace(char *orig, char *rep, char *with) {
+		char *stringReplace(char *orig, char *rep, char *with) {
 
 			char *result; // the return string
 			char *ins;    // the next insert point

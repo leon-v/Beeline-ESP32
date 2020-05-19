@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ModuleSettings.hpp"
+#include "ModuleMessage.hpp"
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
@@ -17,22 +18,62 @@
 
 class Module{
 	public:
+		// Modules * modules;
 		const char * tag = "Module";
 		ModuleSettings moduleSettings;
 		ModuleSettings *settings;
+		ModuleMessage moduleMessage;
+		ModuleMessage *message;
 		char * name;
 		int taskPriority = 5;
 		int taskStackDepth = 2048;
+		bool isMessageSource = false;
+		bool isMessageSink = false;
 		static void startTask(Module *);
 		static void taskWrapper(void * arg);
+
 		
 		Module() {
 			ESP_LOGI(this->tag, "Module Constuuct");
+			this->settings = &this->moduleSettings;
+			this->message = &this->moduleMessage;
+		}
+
+		void setMessageSource(){
+			this->message->setSource();
+		}
+
+		void setMessageSink(){
+			this->message->setSink();
+		}
+
+		void initSourceRouting(cJSON *sinksArray) {
+
+			cJSON * routingSetting = this->message->getRoutingSetting(sinksArray);
+
+			this->settings->addSetting(routingSetting);
+
+			char * test = cJSON_Print(this->settings->json);
+			ESP_LOGW(this->name, "Set source options: %s", test);
+			free(test);
+		}
+
+		void initSinkRouting(cJSON *sinks){
+
+			cJSON *sinkOption = this->message->getRoutingOption(this->name);
+
+			cJSON_AddItemToArray(sinkOption);
+		}
+
+		void sendMessage(cJSON *message) {
+			this->message->send(message);
+		}
+
+		cJSON *recieveMessage(){
+			return this->message->recieve();
 		}
 
 		esp_err_t loadSettingsFile(const char * settingsFile){
-
-			this->settings = &this->moduleSettings;
 
 			ESP_ERROR_CHECK(this->settings->loadFile(settingsFile));
 

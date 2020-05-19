@@ -19,11 +19,14 @@ class Modules{
 		Module * modules[maxModules];
 		unsigned int length = 0;
 		HTTPServer *httpServer;
+		cJSON * sinks;
 	public:
 
 		Modules(HTTPServer *httpServer) {
 
 			_modules = this;
+
+			this->sinks = cJSON_CreateArray();
 
 			this->httpServer = httpServer;
 
@@ -48,7 +51,9 @@ class Modules{
 
 			cJSON_AddStringToObject(version, "firmwareName", "Beeline ESP32");
 
-			cJSON_AddStringToObject(version, "deviceName", "NO NAME");
+			char *name = _modules->getModuleByName("Device")->settings->getString("name");
+
+			cJSON_AddStringToObject(version, "deviceName", name);
 
 			httpUri->sendJSON(version);
 
@@ -160,6 +165,20 @@ class Modules{
 
 			this->length++;
 
+			// module->modules = this;
+
+			if (module->message->isSink) {
+
+				module->initSinkRouting(this->sinks);
+
+				// ESP_LOGW(module->name, "Adding to sinks");
+				// cJSON_AddItemToArray(this->sinks, cJSON_CreateString(module->name));
+			}
+
+			if (module->message->isSource) {
+				module->initSourceRouting(this->sinks);
+			}
+
 			return ESP_OK;
 		}
 
@@ -177,6 +196,10 @@ class Modules{
 
 		Module * module(char * name) {
 			return this->getModuleByName(name);
+		}
+
+		Module * getModuleByName(const char * name) {
+			return this->getModuleByName((char *) name);
 		}
 
 		Module * getModuleByName(char * name) {

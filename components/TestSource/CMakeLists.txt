@@ -4,6 +4,6 @@ file(GLOB txt_files "*.json")
 idf_component_register(
 	SRCS ${src_files}
 	INCLUDE_DIRS "."
-	REQUIRES NVS
+	REQUIRES json
 	EMBED_TXTFILES ${txt_files}
 )
