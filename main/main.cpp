@@ -1,22 +1,17 @@
-
-
-#include "esp_err.h"
-#include "esp_log.h"
-#include "nvs_flash.h"
-#include "driver/gpio.h"
-
-#include "HTTPServer.hpp"
 #include "Modules.hpp"
-#include "WiFi.hpp"
-#include "TestSource.hpp"
-#include "TestSink.hpp"
-#include "Device.hpp"
 
-static const char *TAG = "Beeline System";
+
+#include "Device.hpp"
+#include "WiFi.hpp"
+#include "NtpClient.hpp"
+#include "DieTemperature.hpp"
+#include "ElasticSearch.hpp"
+
+static const char *TAG = "main";
 
 extern "C" void app_main(void) {
     // Do example setup
-    ESP_LOGI(TAG, "Setting up...");
+    ESP_LOGI(TAG, "Start");
 
 	esp_err_t err = nvs_flash_init();
 
@@ -31,9 +26,11 @@ extern "C" void app_main(void) {
 	io_conf.mode = GPIO_MODE_INPUT;
 	io_conf.pin_bit_mask = GPIO_SEL_0;
 	io_conf.pull_up_en = GPIO_PULLUP_ENABLE;
+	io_conf.intr_type = GPIO_INTR_DISABLE;
 	gpio_config(&io_conf);
 
-	ESP_LOGW(TAG, "Press and hold prog (GPIO0) low to erage NVS");
+	printf("Press and hold prog (GPIO0) low to erase NVS\r\n");
+
 	vTaskDelay(1000 / portTICK_PERIOD_MS);
 	if (!gpio_get_level(GPIO_NUM_0)) {
 		ESP_LOGW(TAG, "Resetting NVS");
@@ -60,24 +57,21 @@ extern "C" void app_main(void) {
 			(chip_info.features & CHIP_FEATURE_EMB_FLASH) ? "embedded" : "external");
 		
 	tcpip_adapter_init();
+
 	
-	static HTTPServer httpServer;
-	
-	static Modules modules(&httpServer);
+	static Modules modules;
 
-	static WiFi wifi;
-	ESP_ERROR_CHECK(modules.add(&wifi));
+	static Device device(&modules);
 
-	static Device device;
-	ESP_ERROR_CHECK(modules.add(&device));
+	static WiFi wifi(&modules);
 
-	static TestSource testSource;
-	ESP_ERROR_CHECK(modules.add(&testSource));
+	static NtpClient ntpClient(&modules);
 
-	static TestSink testSink;
-	ESP_ERROR_CHECK(modules.add(&testSink));
+	static DieTemperature dieTemperature(&modules);
+
+	static ElasticSearch elasticSearch(&modules);
 
 	ESP_ERROR_CHECK(modules.start());
 
-    ESP_LOGI(TAG, "Example end");
+    ESP_LOGI(TAG, "End");
 }

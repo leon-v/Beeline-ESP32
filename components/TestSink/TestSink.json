@@ -1,4 +1,0 @@
-{
-	"name": "TestSink",
-	"description": "Recieves a message and puts it in the console."
-}

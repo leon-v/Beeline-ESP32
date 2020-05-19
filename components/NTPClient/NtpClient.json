@@ -1,0 +1,11 @@
+{
+    "name" : "NTP Client",
+    "description": "Provides time services updatef from the provided host",
+    "settings": [
+		{
+			"name":"host",
+			"label": "Host Name",
+			"default": "pool.ntp.org"
+		}
+	]
+}

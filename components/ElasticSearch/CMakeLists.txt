@@ -4,6 +4,6 @@ file(GLOB txt_files "*.json")
 idf_component_register(
 	SRCS ${src_files}
 	INCLUDE_DIRS "."
-	REQUIRES json
+	REQUIRES Modules esp_http_client 
 	EMBED_TXTFILES ${txt_files}
 )

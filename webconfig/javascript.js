@@ -164,29 +164,34 @@ function configureRenderComponentSelect(parent, settings) {
 	parent.append(select);
 }
 
-function configureRenderComponentMultiCheckbox(parent, variable) {
+function configureRenderComponentMultiCheckbox(parent, setting) {
 
-	var options = variable.settings.options || {};
+	var htmlName = new DOMParser().parseFromString(setting.name, "text/html").documentElement.textContent;
+
+	var options = setting.options || {};
 
 	for (optionKey in options) {
 
-		var optionValue = options[optionKey];
+		var option = options[optionKey];
 
-		var htmlName = new DOMParser().parseFromString(variable.name, "text/html").documentElement.textContent;
-		var htmlOptionKey = new DOMParser().parseFromString(optionKey, "text/html").documentElement.textContent;
+		var optionName = new DOMParser().parseFromString(option.name, "text/html").documentElement.textContent;
+
+		var optionValue = new DOMParser().parseFromString(option.value, "text/html").documentElement.textContent;
+
+		var optionId = htmlName + optionValue;
 
 		var formCheck = $('\
 			<div class="form-check">\
-				<input type="checkbox" class="form-check-input" id="' + htmlOptionKey + '" name="' + htmlName + '[' + htmlOptionKey + ']">\
-				<label class="form-check-label" for="' + htmlOptionKey + '">' + htmlOptionKey + '</label>\
+				<input type="checkbox" class="form-check-input" id="' + optionId + '" name="' + htmlName + '[' + optionKey + ']" value="' + optionValue + '">\
+				<label class="form-check-label" for="' + optionId + '">' + optionName + '</label>\
 			</div>\
 		');
 
 		var checkbox = formCheck.find('input');
 
-		var checked = variable.settings.value || [];
+		var checked = setting.value || [];
 
-		var index = checked.indexOf(optionKey);
+		var index = checked.indexOf(optionValue);
 
 		if (index >= 0) {
 			checkbox.prop('checked', true);
@@ -196,9 +201,12 @@ function configureRenderComponentMultiCheckbox(parent, variable) {
 	}
 }
 
-function configureRenderComponentCheckbox(parent, variable) {
+function configureRenderComponentCheckbox(parent, setting) {
 
-	var htmlName = new DOMParser().parseFromString(variable.name, "text/html").documentElement.textContent;
+	if (setting.options) {
+		return configureRenderComponentMultiCheckbox(parent, setting);
+	}
+	var htmlName = new DOMParser().parseFromString(setting.name, "text/html").documentElement.textContent;
 
 	var formCheck = $('\
 		<div class="form-check">\
@@ -529,7 +537,8 @@ $(document).on('click', '.configure-container .save', function(){
 
 	var values = buildFormValuesArray(form.serializeArray());
 
-	console.log(settings, values);
+
+	// :-( Doesnt handle arrays
 
 	for (index in settings) {
 
@@ -537,8 +546,24 @@ $(document).on('click', '.configure-container .save', function(){
 
 		var value = values[setting.name];
 
+		var typeCheckValue = setting.value || setting.default;
+
+		// Convert form inputs that are arrays to an array of their values.
+		if (typeof(typeCheckValue) == 'object') {
+
+			var valuesArray = [];
+			for (arrayIndex in value) {
+
+				var index = value[arrayIndex];
+				var inputName = setting.name + '[' + index + ']';
+
+				valuesArray[valuesArray.length] = $(form).find('[name=\"' + inputName + '\"').val();
+			}
+			value = valuesArray;
+		}
+
 		// Save the value as the same type as the current value to preserve types
-		setting.value = convertToTypeOf(setting.value, value);
+		setting.value = convertToTypeOf(typeCheckValue, value);
 	}
 
 	postToDevice(ipAddress, '/modules/' + encodeURIComponent(name), settings, function(result) {
@@ -549,6 +574,13 @@ $(document).on('click', '.configure-container .save', function(){
 });
 
 function convertToTypeOf(typedVar, input) {
+
+	if (typeof(typedVar) == typeof(input)) {
+		return input;
+	}
+
+	console.log(typeof(typedVar), typeof(input));
+
 	return {
 		'boolean': (v) => (v == 'true') || (v == 1), // eslint-disable-line eqeqeq
 		'number': Number,

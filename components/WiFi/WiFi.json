@@ -7,13 +7,27 @@
 			"label": "Mode",
 			"default": 1,
 			"options":{
-				"1": "AP"
+				"1": "AP",
+				"2": "Client",
+				"3": "AP and Client"
 			}
 		},
 		{
-			"label": "Access Poitn SSID",
+			"label": "Access Point SSID",
 			"name":"accessPointSsid",
 			"default": "Beeline ESP32"
+		},
+		{
+			"label": "Client SSID",
+			"name":"clientSsid",
+			"default": "",
+			"options": {}
+		},
+		{
+			"label": "Client Password",
+			"name":"clientPassword",
+			"default": ""
 		}
+
 	]
 }

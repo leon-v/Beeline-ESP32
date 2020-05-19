@@ -1,0 +1,50 @@
+.input-group{
+	margin-bottom: 10px;
+}
+
+input.form-control.ip{
+	flex: none;
+}
+input.form-control.ip.number{
+	width:53px;
+}
+
+input.form-control.ip.dot{
+	width:31px;
+	flex: none;
+}
+input.form-control.ip.suffixTo{
+	width:48px;
+	flex: none;
+}
+
+select option {
+  font-family: monospace;
+}
+
+button{
+	margin-right:15px;
+}
+
+.panel-title .status{
+	font-size: 12px;
+	padding: 5px;
+	top: -2px;
+	display:none;
+}
+
+hr {
+	margin-top: 10px;
+    margin-bottom: 10px;
+}
+.modal-body{
+	white-space: pre-wrap;
+}
+template{
+	display:none;
+}
+
+.description{
+	display: block;
+	margin-bottom: 1rem;
+}
