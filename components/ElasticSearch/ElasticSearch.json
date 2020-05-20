@@ -1,0 +1,11 @@
+{
+	"name": "Elastic Search",
+	"description": "Sends JSON object to Elasticsearch",
+	"settings": [
+		{
+			"label": "Host",
+			"name":"host",
+			"default": "user:password@elastic.example.com"
+		}
+	]
+}

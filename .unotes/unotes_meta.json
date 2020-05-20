@@ -1,0 +1,59 @@
+{
+  "name": "",
+  "isOrdered": true,
+  "folders": {
+    "build": {
+      "name": "build",
+      "isOrdered": true,
+      "folders": {},
+      "files": {}
+    },
+    "components": {
+      "name": "components",
+      "isOrdered": true,
+      "folders": {},
+      "files": {}
+    },
+    "main": {
+      "name": "main",
+      "isOrdered": true,
+      "folders": {},
+      "files": {}
+    },
+    "WebConfig": {
+      "name": "WebConfig",
+      "isOrdered": true,
+      "folders": {
+        "external": {
+          "name": "external",
+          "isOrdered": true,
+          "folders": {
+            "bootstrap-4.0.0": {
+              "name": "bootstrap-4.0.0",
+              "isOrdered": true,
+              "folders": {},
+              "files": {}
+            },
+            "jquery-3.4.1": {
+              "name": "jquery-3.4.1",
+              "isOrdered": true,
+              "folders": {},
+              "files": {}
+            },
+            "popper.min": {
+              "name": "popper.min",
+              "isOrdered": true,
+              "folders": {},
+              "files": {}
+            }
+          },
+          "files": {}
+        }
+      },
+      "files": {}
+    }
+  },
+  "files": {
+    "README": 0
+  }
+}

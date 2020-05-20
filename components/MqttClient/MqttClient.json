@@ -1,0 +1,11 @@
+{
+    "name" : "MQTT Client",
+    "description": "Provides an MQTT conenction for message routing.",
+    "settings": [
+		{
+			"name":"host",
+			"label": "Host Name",
+			"default": "mqtt.example.com"
+		}
+	]
+}

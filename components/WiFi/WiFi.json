@@ -1,0 +1,33 @@
+{
+	"name": "WiFi",
+	"description": "Provides Wifi 802.11 a,b,g,n and Long Range support",
+	"settings": [
+		{
+			"name":"mode",
+			"label": "Mode",
+			"default": 1,
+			"options":{
+				"1": "AP",
+				"2": "Client",
+				"3": "AP and Client"
+			}
+		},
+		{
+			"label": "Access Point SSID",
+			"name":"accessPointSsid",
+			"default": "Beeline ESP32"
+		},
+		{
+			"label": "Client SSID",
+			"name":"clientSsid",
+			"default": "",
+			"options": {}
+		},
+		{
+			"label": "Client Password",
+			"name":"clientPassword",
+			"default": ""
+		}
+
+	]
+}

@@ -1,0 +1,11 @@
+{
+	"name": "Device",
+	"description": "Provides general device configuration",
+	"settings": [
+		{
+			"label": "Name",
+			"name":"name",
+			"default": "Device [UID]"
+		}
+	]
+}
