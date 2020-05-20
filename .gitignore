@@ -2,3 +2,4 @@
 build
 Beeline-ESP32.code-workspace
 sdkconfig.old
+debuglogs
