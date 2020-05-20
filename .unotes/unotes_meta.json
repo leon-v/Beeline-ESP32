@@ -1,0 +1,40 @@
+{
+  "name": "",
+  "isOrdered": true,
+  "folders": {
+    "build": {
+      "name": "build",
+      "isOrdered": true,
+      "folders": {},
+      "files": {}
+    },
+    "components": {
+      "name": "components",
+      "isOrdered": true,
+      "folders": {},
+      "files": {}
+    },
+    "main": {
+      "name": "main",
+      "isOrdered": true,
+      "folders": {},
+      "files": {}
+    },
+    "WebConfig": {
+      "name": "WebConfig",
+      "isOrdered": true,
+      "folders": {
+        "external": {
+          "name": "external",
+          "isOrdered": true,
+          "folders": {},
+          "files": {}
+        }
+      },
+      "files": {}
+    }
+  },
+  "files": {
+    "README": 0
+  }
+}
