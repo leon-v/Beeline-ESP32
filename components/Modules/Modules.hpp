@@ -449,7 +449,8 @@ class Modules{
 				}
 
 				if (!uxQueueSpacesAvailable(this->queue)) {
-					ESP_LOGE(this->tag.c_str(), "No room in queue");
+					int freeHeap = xPortGetFreeHeapSize();
+					ESP_LOGE(this->tag.c_str(), "No room in queue. Free heap: %d", freeHeap);
 					return ESP_OK;
 				}
 				
