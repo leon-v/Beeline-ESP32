@@ -27,7 +27,26 @@
         "external": {
           "name": "external",
           "isOrdered": true,
-          "folders": {},
+          "folders": {
+            "bootstrap-4.0.0": {
+              "name": "bootstrap-4.0.0",
+              "isOrdered": true,
+              "folders": {},
+              "files": {}
+            },
+            "jquery-3.4.1": {
+              "name": "jquery-3.4.1",
+              "isOrdered": true,
+              "folders": {},
+              "files": {}
+            },
+            "popper.min": {
+              "name": "popper.min",
+              "isOrdered": true,
+              "folders": {},
+              "files": {}
+            }
+          },
           "files": {}
         }
       },
