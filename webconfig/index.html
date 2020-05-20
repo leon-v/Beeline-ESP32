@@ -10,18 +10,20 @@
 	<title>Beeline ESP32 Config</title>
 
 	<!-- Bootstrap CSS -->
-	<link rel="stylesheet" href="bootstrap-4.3.1-dist/css/bootstrap.min.css">
+	<link rel="stylesheet" href="external/bootstrap-4.0.0/css/bootstrap.min.css">
 
 	<!-- Optional JavaScript -->
 	<!-- jQuery first, then Popper.js, then Bootstrap JS -->
-	<script src="jquery-3.4.1/jquery-3.4.1.js"></script>
-	<script src="popper.min/popper.min.js"></script>
-	<script src="bootstrap-4.3.1-dist/js/bootstrap.js"></script>
+	<script src="external/jquery-3.4.1/jquery-3.4.1.js"></script>
 
-	<link rel="stylesheet" href="style.css">
+
+	<script src="external/popper.min/popper.min.js"></script>
+	
+	<script src="external/bootstrap-4.0.0/js/bootstrap.js"></script>
+
+	<link rel="stylesheet" href="index.css">
 	<script src="functions.js"></script>
-	<script src="Config/Config.js"></script>
-	<script src="javascript.js"></script>
+	<script src="template.js"></script>
 </head>
 
 <body>
@@ -33,163 +35,776 @@
 			aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
 			<span class="navbar-toggler-icon"></span>
 		</button>
+
 		<div class="collapse navbar-collapse" id="navbarCollapse">
 			<ul class="navbar-nav mr-auto">
+				
+				<template id="NavBarItem">
+					<li class="nav-item">
+						<a class="nav-link" ></a>
+					</li>
+				</template>
+				<script>
+					class NavBarItem extends Template{
+						anchor = null;
+						constructor(label) {
+							super('#NavBarItem', '#navbarCollapse .navbar-nav');
 
-				<li class="nav-item active">
-					<a class="nav-link mainMenuItem" href="#devices" data-container="devices">Device Search</a>
-				</li>
+							this.anchor = this.element.find('a');
+							this.anchor.attr('href', 'javascript:;');
 
-				<li class="nav-item active">
-					<a class="nav-link mainMenuItem" href="#configure" data-container="configure">Device Configure</a>
-				</li>
+							this.anchor.text(label);
+						}
+					};
+				</script>
 			</ul>
 		</div>
 	</nav>
 
-	<main role="main" class="container home-container current">
-		Home
-	</main>
+	<template id="Container">
+		<main role="main" class="container"></main>
+	</template>
+	<script>
+		class Container extends Template{
+			constructor(parent) {
+				super('#Container', parent);
+				this.element.hide();
+			}
+		}
+	</script>
 
-	<main role="main" class="container devices-container">
+	<template id="Block">
 		<div class="jumbotron">
+			<h3></h3>
+		</div>
+	</template>
+	<script>
+		class Block extends Template{
+			constructor(parent, label) {
+				super('#Block', parent);
+				this.setLabel(label);
+			}
+			setLabel(label){
+				this.element.find('h3').text(label);
+			}
+		}
+	</script>
 
-			<h1>Device Search</h1>
+	<template id="Form">
+		<form class="mb-3"></form>
+	</template>
+	<script>
+		class Form extends Template{
+			constructor(parent){
+				super("#Form", parent);
+			}
 
-			<form class="mb-3 ipScanForm">
+			empty(){
+				this.find('form').empty();
+			}
+		}
+	</script>
 
-				<h4>Scan Presents</h4>
-				<div class="input-group ipPreset">
-					<button type="button" class="btn btn-primary isPreset" data-ip1="192" data-ip2="168" data-ip3="4"
-						data-range-min="1" data-range-max="1"
-						title="Use this IP when you are connection to the device in AP / Config mode.">Config
-						AP</button>&nbsp;&nbsp;
-					<button type="button" class="btn btn-primary isSave" data-save="true"
-						data-names="ip1,ip2,ip3,rangeMin,rangeMax"
-						title="Save this IP and range to browser storage.">Save</button>&nbsp;&nbsp;
-					<button type="button" class="btn btn-primary isLoad" data-load="true"
-						title="Load the IP and range from local storege.">Load</button>
-				</div>
+	<template id="InputGroup">
+		<h6></h6>
+		<div class="input-group"></div>
+	</template>
+	<script>
+		class InputGroup extends Template{
+			constructor(parent){
+				super('#InputGroup', parent);
+			}
+			setLabel(label){
+				this.find('h6').text(label);
+			}
+		}
+	</script>
+
+	<template id="IpInput">
+		<h6></h6>
+		<div class="input-group ipPrefix">
+			<input type="text" class="form-control ip number ip1" placeholder="XXX" aria-label="XXX" value="">
+			<input type="text" class="form-control ip dot" value="." disabled>
+			<input type="text" class="form-control ip number ip2" placeholder="XXX" aria-label="XXX" value="">
+			<input type="text" class="form-control ip dot" value="." disabled>
+			<input type="text" class="form-control ip number ip3" placeholder="XXX" aria-label="XXX" value="">
+			<input type="text" class="form-control ip dot" value="." disabled>
+			<input type="text" class="form-control ip number ip4" placeholder="XXX" aria-label="XXX" value="">
+		</div>
+	</template>
+	<script>
+		class IpInput extends Template{
+
+			constructor(parent, label, ipAddress) {
+				super('#IpInput', parent);
+
+				this.ip1 = this.find('.ip1');
+				this.ip2 = this.find('.ip2');
+				this.ip3 = this.find('.ip3');
+				this.ip4 = this.find('.ip4');
+
+				this.setLabel(label);
+
+				this.setIp(ipAddress);
+			}
+
+			setLabel(label){
+				this.find('h6').text(label);
+			}
+
+			setIp(ipAddress) {
+
+				if (!ipAddress){
+					return;
+				}
+
+				var ipAddress = ipAddress.split('.');
+
+				this.ip1.val(ipAddress[0]);
+				this.ip2.val(ipAddress[1]);
+				this.ip3.val(ipAddress[2]);
+				this.ip4.val(ipAddress[3]);
+			}
+
+			getIp(){
+				return [
+					this.ip1.val(),
+					this.ip2.val(),
+					this.ip3.val(),
+					this.ip4.val(),
+				].join('.');
+			}
+		}
+	</script>
+
+	<template id="Button">
+		<button type="button" class="btn"></button>
+	</template>
+	<script>
+		class Button extends Template{
+
+			constructor(parent, label, type){
+				super('#Button', parent);
+
+				this.setLabel(label);
+				this.setType(type);
+			}
+
+			setLabel(label){
+				this.element.text(label)
+			}
+
+			setType(type){
+				this.element.addClass('btn-' + type);
+			}
+
+			disable(){
+				this.element.attr('disabled', 'disabled');
+			}
+
+			enable(){
+				this.element.removeAttr('disabled');
+			}
+		}
+	</script>
+
+	<template id="Progress">
+		<p>
+			<span class="label"></span>
+			<span class="percent"></span>
+		</p>
+	</template>
+	<script>
+		class Progress extends Template{
+
+			constructor(parent, label){
+				super('#Progress', parent);
+				this.setLabel(label);
+			}
+
+			setLabel(label){
+				this.find('.label').text(label);
+			}
+
+			setPercent(percent){
+
+				percent = (percent > 100) ? 100 : percent;
+				percent = (percent < 0) ? 0 : percent;
+				percent = Math.round(percent);
+				this.find('.percent').text(percent + '%');
+			}
+		}
+	</script>
+
+	<template id="Table">
+		<h5 class="label"></h5>
+		<table class="table">
+			<thead>
+				<tr class="heading"></tr>
+			</thead>
+			<tbody></tbody>
+		</table>
+	</template>
+	<script>
+		class Table extends Template{
+			constructor(parent, label, headingsText){
+				super('#Table', parent);
 
 
-				<br>
-				<h4>IP Address Prefix</h4>
-				<div class="input-group ipPrefix">
-					<input type="text" name="ip1" class="form-control ip number" placeholder="192" aria-label="192"
-						value="">
-					<input type="text" class="form-control ip dot" value="." disabled>
-					<input type="text" name="ip2" class="form-control ip number" placeholder="168" aria-label="168"
-						value="">
-					<input type="text" class="form-control ip dot" value="." disabled>
-					<input type="text" name="ip3" class="form-control ip number" placeholder="0" aria-label="0"
-						value="">
-					<input type="text" class="form-control ip dot" value="." disabled>
-					<input type="text" class="form-control ip number" placeholder="XXX" aria-label="XXX" disabled>
-				</div>
+				this.heading = this.find('.heading');
+				
+				this.tbody = this.find('tbody');
+				this.label = this.find('.label');
 
-				<br>
-				<h4 class="clear">Suffix Range</h4>
-				<div class="input-group">
-					<input type="text" name="rangeMin" class="form-control ip number" placeholder="0" aria-label="0"
-						value="1">
-					<input type="text" class="form-control ip suffixTo" value=" to " disabled>
-					<input type="text" name="rangeMax" class="form-control ip number" placeholder="0" aria-label="0"
-						value="255">
-				</div>
+				this.setLabel(label);
+				this.setHeadings(headingsText);
+			}
+			setLabel(label){
+				this.label.text(label);
+			}
+			clearHeadings(){
+				this.heading.empty();
+			}
+			setHeadings(headingsText){
 
+				this.clearHeadings();
 
-			</form>
-			<button type="button" class="btn btn-primary startScan">Scan</button>
+				var index;
+				for (index in headingsText){
+					this.appendHeading(headingsText[index]);
+				}
+			}
+			appendHeading(headingText){
 
-			<div class="scanResults hidden">
-				<hr>
-				<p>Scanning Network: <span class="scanProgress">0%</span></p>
-				<h3>Found Devices</h3>
-				<table class="table">
-					<tbody>
-						<tr class="heading">
-							<th>IP</th>
-							<th>Version</th>
-							<th>Name</th>
-						</tr>
-					</tbody>
-				</table>
+				var heading = $('<th></th>');
+				heading.text(headingText);
+
+				this.heading.append(heading);
+			}
+
+			clear(){
+				this.tbody.empty();
+			}
+
+			appendRow(rowContent){
+
+				var row = $('<tr></tr>');
+
+				var index;
+				for (index in rowContent){
+
+					var cell = $('<td></td>');
+
+					var content = rowContent[index];
+					if (typeof(content) == 'string') {
+						cell.text(content);
+					}
+					else{
+						cell.append(content.element || content);
+					}
+					
+
+					row.append(cell);
+				}
+
+				this.tbody.append(row);
+			}
+		}
+	</script>
+
+	<template id="Anchor">
+		<a></a>
+	</template>
+	<script>
+		class Anchor extends Template{
+			constructor(parent, label){
+
+				super('#Anchor', parent);
+
+				this.setLabel(label);
+			}
+
+			setLabel(label){
+				this.find('a').text(label);
+			}
+
+			set click(callback){
+				super.click = callback;
+
+				this.find('a').attr('href', 'javascript:;');
+			}
+		}
+	</script>
+
+	<template id="ModulePanel">
+		<div class="panel">
+			<div class="panel-heading">
+				<h5 class="panel-title">
+					<a class="name" data-toggle="collapse" href="..." aria-expanded="true">...</a>
+					<span class="status">...</span>
+				</h5>
+				<span class="description">...</span>
+			</div>
+
+			<div id="..." class="panel-collapse in collapse">
+
 			</div>
 		</div>
-	</main>
+	</template>
+	<script>
+		class ModulePanel extends Template{
+			
+			constructor(parent, name){
+				super('#ModulePanel', parent);
 
-	<main role="main" class="container configure-container">
-		<div class="jumbotron">
+				this.collapse = this.find('.collapse');
+				
+				this.collapse.get(0).context = this;
 
-			<h1>Configure</h1>
+				this.collapse.on('show.bs.collapse', function (event) {
+					this.context.show(event);
+				});
 
-			<form class="mb-3 ipAddressForm">
+				this.collapse.on('shown.bs.collapse', function (event) {
+					this.context.shown(event);
+				});
 
-				<h4>IP Address</h4>
+				this.collapse.on('hidden.bs.collapse', function (event) {
+					this.context.hidden(event);
+				});
 
-				<div class="input-group ipAddress">
-					<input type="text" name="ip1" class="form-control ip number" placeholder="192" aria-label="192">
-					<input type="text" class="form-control ip dot" value="." disabled>
-					<input type="text" name="ip2" class="form-control ip number" placeholder="168" aria-label="168">
-					<input type="text" class="form-control ip dot" value="." disabled>
-					<input type="text" name="ip3" class="form-control ip number" placeholder="0" aria-label="0">
-					<input type="text" class="form-control ip dot" value="." disabled>
-					<input type="text" name="ip4" class="form-control ip number" placeholder="10" aria-label="10">
-				</div>
-			</form>
-			<button type="button" class="btn btn-primary connect">Load Settings.</button>
+				this.collapse.on('hide.bs.collapse', function (event) {
+					this.context.hide(event);
+				});
 
-		</div>
 
-		<div class="jumbotron components">
+				this.form = new Form(this.collapse);
+			}
 
-			<h1>Components</h1>
+			set name(value){
+				this.find('.name').text(value);
+				this.find('.name').attr('href', '#PanelCollapse-' + value);
+				this.find('.panel-collapse').attr('id', 'PanelCollapse-' + value);
+			}
 
-			<div class="panel-group" id="components">
+			set description(value){
+				this.find('.description').text(value);
+			}
 
-				<div class="panel">
-					<p>Click "Request Configuration" to load the devices configuration here.</p>
-				</div>
+			get visible(){
+				return this.collapse.hasClass('show');
+			}
+			
+			append(className, ...args){
+				return new className(this.collapse, ...args);
+			}
 
-				<div class="template" style="display:none;">
-					<div class="panel-heading">
-						<h5 class="panel-title">
-							<a class="title" data-toggle="collapse" data-parent="#components" href="#alias">Title</a>
-							<span class="status">Loading...</span>
-						</h5>
-						<span class="description">Description loading...</span>
-					</div>
+			show(event){}
 
-					<div id="alias" class="panel-collapse collapse in">
-						<form>
-							<div class="content"></div>
-							<br>
-							<button type="button" class="btn btn-primary save" style="display:none">Save</button>
-						</form>
-					</div>
-					<hr>
-				</div>
+			shown(event){}
+
+			hidden(event){}
+
+			hide(event){}
+		}
+	</script>
+
+	<template id="TextInput">
+		<div class="form-group row">
+			<label for="" class="col-sm-2 col-form-label">...</label>
+			<div class="col-sm-10">
+				<input type="text" class="form-control">
 			</div>
 		</div>
-	</main>
-	<div class="modal fade bd-example-modal-lg" tabindex="-1" role="dialog" id="modal" >
-		<div class="modal-dialog modal-lg" role="document">
-			<div class="modal-content">
-				<div class="modal-header">
-					<h5 class="modal-title"></h5>
-					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
-						<span aria-hidden="true">&times;</span>
-					</button>
-				</div>
-				<div class="modal-body"></div>
-				<div class="modal-footer"></div>
+	</template>
+	<script>
+		class TextInput extends Template{
+
+			constructor(parent){
+				super('#TextInput', parent);
+				this.input = this.find('input');
+			}
+
+			set label(value){
+				this.find(".col-form-label").text(value);
+			}
+			set value(value){
+				this.input.val(value);
+			}
+
+			get value(){
+				return this.input.val();
+			}
+		}
+	</script>
+
+	<template id="HorizontalRule">
+		<hr>
+	</template>
+	<script>
+		class HorizontalRule extends Template{
+			constructor(parent){
+				super('#HorizontalRule', parent);
+			}
+		}
+	</script>
+
+	<template id="SelectInput">
+		<div class="form-group row">
+			<label class="col-sm-2 col-form-label">...</label>
+			<div class="col-sm-10">
+				<select class="form-control" aria-describedby="basic-addon2">
+					<option class="labelOption"></option>
+				</select>
 			</div>
 		</div>
-	</div>
+	</template>
+	<script>
+		class SelectInput extends Template{
+			select = null;
+			constructor(parent){
+				super('#SelectInput', parent);
+				this.select = this.find('select');
+			}
+
+			set label(value){
+				this.find(".col-form-label").text(value);
+				this.find(".labelOption").text('Seelct ' + value);
+			}
+
+			set options(value){
+				var index;
+				for (index in value) {
+					this.addOption(index, value[index]);
+				}
+			}
+
+			set value(value){
+				this.select.val(value);
+			}
+
+			get value(){
+				return this.select.val();
+			}
+
+			addOption(value, label){
+
+				var option = $('<option></option>');
+				option.attr('value', value);
+				option.text(label);
+
+				this.select.append(option);
+			}
+		}
+	</script>
+
+	<template id="SingleCheckboxInput">
+		<div class="form-group row">
+			<label class="col-sm-2 col-form-label">...</label>
+			<div class="col-sm-10">
+				<input type="checkbox">
+			</div>
+		</div>
+	</template>
+	<script>
+		class SingleCheckboxInput extends Template{
+			constructor(parent){
+				super('#SingleCheckboxInput', parent);
+			}
+
+			set name(value){
+				this.find(".col-form-label").text(value);
+			}
+
+			set value(value){
+				this.find("input").val(value);
+			}
+		}
+	</script>
+
+	<template id="CheckboxInput">
+		<div class="form-check">
+			<input type="checkbox" class="form-check-input" id="..." name="..." value="...">
+			<label class="form-check-label" for="...">...</label>
+		</div>
+	</template>
+	<script>
+		class CheckboxInput extends Template{
+			input = null;
+			labelEl = null;
+			constructor(parent){
+				super('#CheckboxInput', parent);
+				this.input = this.find('input');
+				this.labelEl = this.find('label');
+			}
+
+			set name(value){
+				this.input.attr('name', value);
+				this.linkItems();
+			}
+
+			set label(value){
+				this.labelEl.text(value);
+				this.linkItems();
+			}
+
+			set value(value){
+				this.input.val(value);
+				this.linkItems();
+			}
+
+			set checked(value){
+				this.input.prop('checked', value);
+			}
+
+			get checked(){
+				return this.input.prop('checked');
+			}
+
+			linkItems(){
+				var id = this.input.val() + '-' + this.labelEl.text();
+				this.input.attr('id', id);
+				this.labelEl.attr('for', id);
+			}
+		}
+	</script>
+
+	<template id="MultiCheckboxInput">
+		<div class="form-group row">
+			<label class="col-sm-2 col-form-label">...</label>
+			<div class="group col-sm-10">
+				<!-- CheckboxInput -->
+			</div>
+		</div>
+	</template>
+	<script>
+		class MultiCheckboxInput extends Template{
+			group = null;
+			optionInputs = {};
+			optionsSelected = [];
+			constructor(parent){
+				super('#MultiCheckboxInput', parent);
+				this.group = this.find('.group');
+			}
+
+			set label(value){
+				this.find(".col-form-label").text(value);
+			}
+
+			set options(value){
+				var name;
+				for (name in value) {
+					this.appendOption(value[name]);
+				}
+				this.updateChecked();
+			}
+
+			set value(value){
+				this.optionsChecked = value;
+				this.updateChecked();
+			}
+
+			get value(){
+
+				var value = [];
+
+				var valueName;
+				for (valueName in this.optionInputs){
+
+					if (!this.optionInputs[valueName].checked){
+						continue;
+					}
+
+					value.push(valueName);
+				}
+				return value;
+			}
+
+			appendOption(settings) {
+				var option = new CheckboxInput(this.group);
+				option.name = settings.name;
+				option.label = settings.name;
+				option.value = settings.value;
+				this.optionInputs[settings.value] = option;
+			}
+
+			updateChecked(){
+
+				// Un-check all
+				var value;
+				for (value in this.optionInputs){
+					this.optionInputs[value].checked = false;
+				}
+
+				// check checked
+				var index;
+				for (index in this.optionsChecked){
+					var checkedValue = this.optionsChecked[index];
+					this.optionInputs[checkedValue].checked = true;
+				}
+			}
+		}
+	</script>
+
+	<template id="Preformatted">
+		<div class="form-group row">
+			<label class="col-sm-2 col-form-label">...</label>
+			<div class="group col-sm-10">
+				<pre></pre>
+			</div>
+		</div>
+	</template>
+	<script>
+		class Preformatted extends Template{
+			constructor(parent){
+				super("#Preformatted", parent);
+			}
+
+			set value(value){
+				this.find('pre').text(value);
+			}
+
+			set label(value){
+				this.find('label').text(value);
+			}
+		}
+	</script>
+
+	<template id="GraphLog">
+		<div class="form-group row">
+			<label class="col-sm-2 col-form-label">...</label>
+			<div class="group col-sm-10">
+				<canvas style="border:1px solid black">
+				</canvas>
+			</div>
+		</div>
+	</template>
+	<script>
+		class GraphLog extends Template{
+			groupCol = null;
+			canvas = null;
+			ctx = null;
+
+			min = 0;
+			max = 100;
+			current = 0;
+			step = 5;
+			
+			points = [];
+			x = 0;
+			constructor(parent){
+				super("#GraphLog", parent);
+				this.canvas = this.find('canvas').get(0);
+
+				this.group = this.find('.group');
+				
+				this.updateWidth();
+
+				var self = this;
+				$(window).resize(function() {
+					self.updateWidth();
+					self.render();
+				});
+
+				this.ctx = this.canvas.getContext("2d");
+
+				this.ctx.font = "12px Arial";
+				this.ctx.textAlign = "left";
+			}
+
+			set label(value){
+				this.find('label').text(value);
+			}
+
+			set value(value){
+				this.current = value;
+
+				var ratio = this.current / this.max;
+				this.addPoint(this.canvas.height - (ratio * this.canvas.height));
+			}
+
+			updateWidth(){
+
+				var width = this.group.width();
+				
+				this.canvas.height = 100;
+				this.canvas.width = width;
+
+				this.canvas.style.width = width + 'px';
+				this.canvas.style.height = 100 + 'px';
+			}
+
+			addPoint(y){
+
+				this.x++;
+
+				if (this.x > this.canvas.width){
+					this.x = 0;
+				}
+
+				this.points[this.x] = y;
+				this.render();
+			}
+
+			render(){
+
+				if (!this.ctx){
+					return;
+				}
+
+				this.updateWidth();
+
+				this.ctx.fillStyle = "rgba(0, 0, 0, 0)";
+				this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+				this.ctx.fillStyle = "rgba(0, 0, 0, 1)";
+
+				var moved = false;
+
+				var x;
+				for (x in this.points){
+
+					var y = this.points[x];
+
+					if (!moved){
+						this.ctx.beginPath();
+						this.ctx.moveTo(x, y);
+						moved = true;
+					}
+
+					this.ctx.lineTo(x,y); // fill in the pixel at (10,10)
+					this.ctx.stroke();
+
+					if (this.x == x){
+						this.ctx.closePath();
+						this.ctx.beginPath();
+						this.ctx.moveTo(x, y);
+					}
+				}
+
+				this.ctx.closePath();
+
+				this.ctx.fillText(this.current, this.x + 5, y + 6);
+			}
+		}
+	</script>
+
+	<script src="page.js"></script>
+	<script src="index.js"></script>
+
+	<script>
+		index = new Index;
+	</script>
+
+	<script src="scan.js"></script>
+	<script>
+		index.add(new Scan);
+	</script>
 	
-	<script type="text/javascript">
-		showPage();
-		loadPreset();
+
+	<script src="configure.js"></script>
+	<script>
+		index.add(new Configure);
 	</script>
 </body>
 
