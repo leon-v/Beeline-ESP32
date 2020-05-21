@@ -26,3 +26,18 @@ The inital modules i will be devloping are:
 11. IR Motion (Source)
 
 I will also think about adding triggers, so thing slike an IR montion sensor can trigger a reading of a source. This can also be used to save battery power by waking up once to synchronise a set of work and goign back to sleep.
+
+## Getting Started
+
+This uses esp-idf V4.0 so follow the instructions here:
+[https://docs.espressif.com/projects/esp-idf/en/stable/get-started/](https://docs.espressif.com/projects/esp-idf/en/stable/get-started/)
+The link above contains instructions on getting the IDF, installing the toolchain, and setting the enviroment variables.
+Once all that is done, you can use:
+\>idf\.py flash && idf\.py monitor
+In the usual way to compile, flash and monitor.
+
+I use VSCode in Windows 10, but connected to a WSL Ubuntu 18.04, and all the command line stuff happens in the Ubutnu WSL.
+Some of the code is structured in clunky ways to satify VSCode and esp compiler so neither give warnings.
+
+<br>
+<br>
