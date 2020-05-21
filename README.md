@@ -7,8 +7,11 @@ The goal of this project is a universal, low power multi-purpose messaging platf
 ## Project Brief
 
 It is a platform to make it simple to develop sensor nodes from temperature sensors to cameras.
+
 The routing is handeled by a messaging bus that is handeled internally, All messages are in JSON.
+
 Its based around modules which can be message input and/or outputs. The web interface will allow you to choose where messages go.
+
 E.g. A temperature sensor in the field may send its data to a LoRa radio, and another device may have its input LoRa radio set to send to an MQTT server.
 
 The inital modules i will be devloping are:
@@ -30,14 +33,17 @@ I will also think about adding triggers, so thing slike an IR montion sensor can
 ## Getting Started
 
 This uses esp-idf V4.0 so follow the instructions here:
+
 [https://docs.espressif.com/projects/esp-idf/en/stable/get-started/](https://docs.espressif.com/projects/esp-idf/en/stable/get-started/)
+
 The link above contains instructions on getting the IDF, installing the toolchain, and setting the enviroment variables.
+
 Once all that is done, you can use:
+
 \>idf\.py flash && idf\.py monitor
+
 In the usual way to compile, flash and monitor.
 
 I use VSCode in Windows 10, but connected to a WSL Ubuntu 18.04, and all the command line stuff happens in the Ubutnu WSL.
-Some of the code is structured in clunky ways to satify VSCode and esp compiler so neither give warnings.
 
-<br>
-<br>
+Some of the code is structured in clunky ways to satify VSCode and esp compiler so neither give warnings.
