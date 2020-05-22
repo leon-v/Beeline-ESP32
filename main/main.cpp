@@ -6,6 +6,7 @@
 #include "NtpClient.hpp"
 #include "DieTemperature.hpp"
 #include "ElasticSearch.hpp"
+#include "MqttClient.hpp"
 
 static const char *TAG = "main";
 
@@ -58,6 +59,7 @@ extern "C" void app_main(void) {
 		
 	tcpip_adapter_init();
 
+	ESP_ERROR_CHECK(esp_event_loop_create_default());
 	
 	static Modules modules;
 
@@ -70,6 +72,8 @@ extern "C" void app_main(void) {
 	static DieTemperature dieTemperature(&modules);
 
 	static ElasticSearch elasticSearch(&modules);
+
+	static MqttClient mqttClient(&modules);
 
 	ESP_ERROR_CHECK(modules.start());
 

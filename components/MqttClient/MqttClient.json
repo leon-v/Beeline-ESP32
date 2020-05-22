@@ -6,6 +6,26 @@
 			"name":"host",
 			"label": "Host Name",
 			"default": "mqtt.example.com"
+		},
+		{
+			"name":"port",
+			"label": "Port",
+			"default": 1883
+		},
+		{
+			"name":"clientId",
+			"label": "Client ID",
+			"default": "Beeline_[UID]"
+		},
+		{
+			"name":"username",
+			"label": "Username",
+			"default": ""
+		},
+		{
+			"name":"password",
+			"label": "Password",
+			"default": ""
 		}
 	]
 }
