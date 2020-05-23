@@ -175,7 +175,8 @@ class Modules{
 				return NULL;
 			}
 			esp_err_t save(cJSON * newSettings) {
-
+				
+				LOGW("save");
 				if (!cJSON_IsArray(newSettings)) {
 					ESP_LOGE(this->tag.c_str(), "Setgins passed is not an array");
 					return ESP_FAIL;
@@ -622,6 +623,33 @@ class Modules{
 			return ESP_OK;
 		}
 
+		bool canRouteTo(Module * module){
+
+			if (!module->isSink) {
+				return false;
+			}
+			// Is module->name in this routes
+
+			cJSON *routes = this->settings.getValue("routing");
+			
+			if (!cJSON_IsArray(routes)) {
+				return false;
+			}
+
+			cJSON *route;
+			cJSON_ArrayForEach(route, routes) {
+
+				if (!cJSON_IsString(route)) {
+					continue;
+				}
+
+				if (string(route->valuestring).compare(module->name) == 0) {
+					return true;
+				}
+			}
+
+			return false;
+		}
 		// Settings
 		virtual void reLoad(){
 				ESP_LOGW(this->tag.c_str(), "Module has no reLoad");
@@ -894,15 +922,17 @@ class Modules{
 
 		module->restPost(httpUri, path);
 	}
-	esp_err_t sendMessage(Module *module, cJSON *message) {
+	esp_err_t sendMessage(Module *fromModule, cJSON *message) {
 
-		for (Module *module: this->modules){
+		for (Module *toModule: this->modules){
 
-			if (!module->isSink) {
+			if (!fromModule->canRouteTo(toModule)) {
 				continue;
 			}
 
-			ESP_ERROR_CHECK_WITHOUT_ABORT(module->queue.add(message));
+			LOGW("Routing message from '%s' to '%s'", fromModule->name.c_str(), toModule->name.c_str());
+
+			ESP_ERROR_CHECK_WITHOUT_ABORT(toModule->queue.add(message));
 		}
 		
 		return ESP_OK;
