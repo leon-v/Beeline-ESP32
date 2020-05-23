@@ -5,7 +5,7 @@
 		{
 			"name":"mode",
 			"label": "Mode",
-			"default": 1,
+			"default": 3,
 			"options":{
 				"1": "AP",
 				"2": "Client",

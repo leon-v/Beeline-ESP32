@@ -19,6 +19,7 @@ class MqttClient : public Modules::Module {
 	string username;
 	string password;
 	bool connected = false;
+	bool loaded = false;
 	// string lwtTopic;
 
 
@@ -26,8 +27,6 @@ class MqttClient : public Modules::Module {
 
 		ESP_ERROR_CHECK(this->setIsSource());
 		ESP_ERROR_CHECK(this->setIsSink());
-
-		this->load();
 	};
 
 	void load(){
@@ -65,10 +64,17 @@ class MqttClient : public Modules::Module {
 		ESP_ERROR_CHECK(esp_mqtt_client_register_event(this->client, ESP_MQTT_EVENT_ANY_ID, this->eventHandler, this));
 
 		ESP_ERROR_CHECK(esp_mqtt_client_start(this->client));
+
+		this->loaded = true;
 	};
 
 	void unLoad(){
 		this->connected = false;
+
+		if (!this->client) {
+			return;
+		}
+		
 		ESP_ERROR_CHECK_WITHOUT_ABORT(esp_mqtt_client_stop(this->client));
 		ESP_ERROR_CHECK_WITHOUT_ABORT(esp_mqtt_client_destroy(this->client));
 	};
@@ -89,8 +95,13 @@ class MqttClient : public Modules::Module {
 				continue;
 			}
 
+			if (!this->loaded){
+				this->load();
+			}
+
 			if (!this->connected) {
 				ESP_LOGI(this->name.c_str(), "Not connected, discarding message.");
+				cJSON_Delete(message);
 				continue;
 			}
 
@@ -106,6 +117,8 @@ class MqttClient : public Modules::Module {
 			LOGI("sent publish successful, msg_id=%d", msg_id);
 
 			free(data);
+
+			cJSON_Delete(message);
 		}
 	}
 
