@@ -26,6 +26,36 @@
 			"name":"password",
 			"label": "Password",
 			"default": ""
+		},
+		{
+			"name":"subTopic",
+			"label": "Subscribe Topic",
+			"default": "/beeline/sink/#"
+		},
+		{
+			"name":"subQos",
+			"label": "Subscribe QOS",
+			"default": 1,
+			"options":{
+				"0":"At Most Once",
+				"1":"At Least Once",
+				"2":"Exactly Once"
+			}
+		},
+		{
+			"name":"pubTopic",
+			"label": "Publish Topic",
+			"default": "/beeline/source"
+		},
+		{
+			"name":"pubQos",
+			"label": "Publish QOS",
+			"default": 1,
+			"options":{
+				"0":"At Most Once",
+				"1":"At Least Once",
+				"2":"Exactly Once"
+			}
 		}
 	]
 }

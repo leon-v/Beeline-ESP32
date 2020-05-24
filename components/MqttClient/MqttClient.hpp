@@ -20,7 +20,12 @@ class MqttClient : public Modules::Module {
 	string password;
 	bool connected = false;
 	bool loaded = false;
+	bool subscribed = false;
 	// string lwtTopic;
+	string pubTopic;
+	int pubQos = 1;
+	string subTopic;
+	int subQos = 1;
 
 
 	MqttClient(Modules *modules) : Modules::Module(modules, string(mqttClientSettingsFile)) {
@@ -32,31 +37,17 @@ class MqttClient : public Modules::Module {
 	void load(){
 
 		this->host = this->settings.getString("host");
-		if (!this->host.length()) {
-			LOGE("Failed to get 'host'");
-		}
 		this->config.host = this->host.c_str();
 
 		this->config.port = this->settings.getInt("port");
 
 		this->clientId = this->settings.getString("clientId");
-		if (!this->clientId.length()) {
-			LOGE("Failed to get 'clientId'");
-		}
 		this->config.client_id = this->clientId.c_str();
 
 		this->username = this->settings.getString("username");
-		if (!this->username.length()) {
-			LOGE("Failed to get 'username'");
-			return;
-		}
 		this->config.username = this->username.c_str();
 
 		this->password = this->settings.getString("password");
-		if (!this->password.length()) {
-			LOGE("Failed to get 'password'");
-			return;
-		}
 		this->config.password = this->password.c_str();
 
 		this->client = esp_mqtt_client_init(&this->config);
@@ -70,6 +61,7 @@ class MqttClient : public Modules::Module {
 
 	void unLoad(){
 		this->connected = false;
+		this->subscribed = false;
 
 		if (!this->client) {
 			return;
@@ -105,6 +97,12 @@ class MqttClient : public Modules::Module {
 				continue;
 			}
 
+			if (!this->subscribed){
+				ESP_LOGI(this->name.c_str(), "Not subscribed, discarding message.");
+				cJSON_Delete(message);
+				continue;
+			}
+
 			char *data = cJSON_Print(message);
 
 			if (!data){
@@ -113,8 +111,10 @@ class MqttClient : public Modules::Module {
 				continue;
 			}
 
-			int msg_id = esp_mqtt_client_publish(client, "/beeline/test", data, 0, 2, 0);
-			LOGI("sent publish successful, msg_id=%d", msg_id);
+			this->pubTopic = this->settings.getString("pubTopic");
+			this->pubQos = this->settings.getInt("pubQos");
+
+			esp_mqtt_client_publish(this->client, this->pubTopic.c_str(), data, strlen(data) + 1, this->pubQos, 0);
 
 			free(data);
 
@@ -131,6 +131,11 @@ class MqttClient : public Modules::Module {
 	}
 
 	esp_err_t  eventHandlerCallback(esp_mqtt_event_handle_t event) {
+
+		this->subTopic = this->settings.getString("subTopic");
+		this->subQos = this->settings.getInt("subQos");
+		cJSON *message;
+
 		int msg_id;
 		// your_context_t *context = event->context;
 		switch (event->event_id) {
@@ -140,31 +145,21 @@ class MqttClient : public Modules::Module {
 				this->connected = true;
 				LOGI("MQTT_EVENT_CONNECTED");
 
-
-				// msg_id = esp_mqtt_client_publish(client, "/topic/qos1", "data_3", 0, 1, 0);
-				// LOGI("sent publish successful, msg_id=%d", msg_id);
-
-				msg_id = esp_mqtt_client_subscribe(client, "/topic/qos0", 0);
-				LOGI("sent subscribe successful, msg_id=%d", msg_id);
-
-				msg_id = esp_mqtt_client_subscribe(client, "/topic/qos1", 1);
-				LOGI("sent subscribe successful, msg_id=%d", msg_id);
-
-				msg_id = esp_mqtt_client_unsubscribe(client, "/topic/qos1");
-				LOGI("sent unsubscribe successful, msg_id=%d", msg_id);
+				msg_id = esp_mqtt_client_subscribe(client, this->subTopic.c_str(), this->subQos);
+				// LOGI("sent subscribe successful, msg_id=%d", msg_id);
 				break;
 
 
 			case MQTT_EVENT_DISCONNECTED:
 				this->connected = false;
+				this->subscribed = false;
 				LOGI("MQTT_EVENT_DISCONNECTED");
 				break;
 
 
 			case MQTT_EVENT_SUBSCRIBED:
+				this->subscribed = true;
 				LOGI("MQTT_EVENT_SUBSCRIBED, msg_id=%d", event->msg_id);
-				msg_id = esp_mqtt_client_publish(client, "/topic/qos0", "data", 0, 0, 0);
-				LOGI("sent publish successful, msg_id=%d", msg_id);
 				break;
 
 
@@ -174,14 +169,27 @@ class MqttClient : public Modules::Module {
 
 
 			case MQTT_EVENT_PUBLISHED:
-				LOGI("MQTT_EVENT_PUBLISHED, msg_id=%d", event->msg_id);
+				// LOGI("MQTT_EVENT_PUBLISHED, msg_id=%d", event->msg_id);
 				break;
 
 
 			case MQTT_EVENT_DATA:
 				LOGI("MQTT_EVENT_DATA");
+
 				printf("TOPIC=%.*s\r\n", event->topic_len, event->topic);
 				printf("DATA=%.*s\r\n", event->data_len, event->data);
+
+				message = cJSON_Parse(event->data);
+
+				if (!message){
+					LOGE("Failed to parse message");
+					break;
+				}
+
+				this->message.send(message);
+				
+				cJSON_Delete(message);
+
 				break;
 
 
@@ -191,6 +199,7 @@ class MqttClient : public Modules::Module {
 			
 			case MQTT_EVENT_BEFORE_CONNECT:
 				this->connected = false;
+				this->subscribed = false;
 				LOGI("MQTT_EVENT_BEFORE_CONNECT");
 				LOGW("this->config.host: %s", this->config.host);
 				break;

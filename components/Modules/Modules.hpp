@@ -294,7 +294,7 @@ class Modules{
 				cJSON_ArrayForEach(setting, this->settings) {
 
 					string name = this->getSettingName(setting);
-					ESP_LOGI(this->tag.c_str(), "Loading: %s", name.c_str());
+					// ESP_LOGI(this->tag.c_str(), "Loading: %s", name.c_str());
 
 					ESP_ERROR_CHECK(this->loadValue(setting));
 				}
@@ -333,7 +333,7 @@ class Modules{
 				cJSON *value = this->getValue(name);
 
 				if (!cJSON_IsNumber(value)) {
-					ESP_LOGE(this->tag.c_str(), "Failed to get '%s'", name.c_str());
+					ESP_LOGE(this->tag.c_str(), "Failed to get '%s'. Is not number.", name.c_str());
 					ESP_ERROR_CHECK(ESP_FAIL);
 				}
 
@@ -344,7 +344,7 @@ class Modules{
 				cJSON *value = this->getValue(name);
 
 				if (!cJSON_IsNumber(value)) {
-					ESP_LOGE(this->tag.c_str(), "Failed to get %s", name.c_str());
+					ESP_LOGE(this->tag.c_str(), "Failed to get '%s'. Is not number.", name.c_str());
 					ESP_ERROR_CHECK(ESP_FAIL);
 				}
 
@@ -355,7 +355,7 @@ class Modules{
 					cJSON *value = this->getValue(name);
 
 					if (!cJSON_IsString(value)) {
-						ESP_LOGE(this->tag.c_str(), "Failed to get %s", name.c_str());
+						ESP_LOGE(this->tag.c_str(), "Failed to get '%s'. Is not string.", name.c_str());
 						ESP_ERROR_CHECK(ESP_FAIL);
 					}
 
@@ -619,8 +619,6 @@ class Modules{
 
 			cJSON * options = this->modules->getSinkOptions();
 
-			jlogw(options);
-
 			cJSON_ReplaceItemInObjectCaseSensitive(routing, "options", options);
 		}
 
@@ -837,7 +835,7 @@ class Modules{
 				continue;
 			}
 
-			LOGW("Setting sink options to '%s'", sourceModule->name.c_str());
+			// LOGW("Setting sink options to '%s'", sourceModule->name.c_str());
 
 			sourceModule->updateSinkOptions();
 		}
@@ -958,8 +956,6 @@ class Modules{
 			if (!fromModule->canRouteTo(toModule)) {
 				continue;
 			}
-
-			LOGW("Routing message from '%s' to '%s'", fromModule->name.c_str(), toModule->name.c_str());
 
 			ESP_ERROR_CHECK_WITHOUT_ABORT(toModule->queue.add(message));
 		}
