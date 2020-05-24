@@ -71,17 +71,17 @@ extern "C" void app_main(void) {
 
 	static DieTemperature dieTemperature(&modules);
 
-	char *json = cJSON_Print(dieTemperature.routingSetting);
-	ESP_LOGW(dieTemperature.tag.c_str(), "routingSetting: %s", json);
-	free(json);
+	// char *json = cJSON_Print(dieTemperature.routingSetting);
+	// ESP_LOGW(dieTemperature.tag.c_str(), "routingSetting: %s", json);
+	// free(json);
 
 	static ElasticSearch elasticSearch(&modules);
 
 	static MqttClient mqttClient(&modules);
 
-	json = cJSON_Print(dieTemperature.routingSetting);
-	ESP_LOGW(dieTemperature.tag.c_str(), "routingSetting: %s", json);
-	free(json);
+	// json = cJSON_Print(dieTemperature.routingSetting);
+	// ESP_LOGW(dieTemperature.tag.c_str(), "routingSetting: %s", json);
+	// free(json);
 
 	ESP_ERROR_CHECK(modules.start());
 

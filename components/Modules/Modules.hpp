@@ -67,7 +67,6 @@ class Modules{
 		int				taskPriority	= 5;
 		bool			isSource		= false;
 		bool			isSink			= false;
-		cJSON			*routingSetting;
 		cJSON			*sinkOption;
 
 		// Module / Init
@@ -545,17 +544,7 @@ class Modules{
 			queue(this),
 			message(this) {
 
-			// Handle passed parmaters
-			// this->modules = modules;
-
-			// ESP_LOGI(this->tag.c_str(), "Construct");
-
-			this->routingSetting = cJSON_CreateObject();
-			this->sinkOption = cJSON_CreateObject();
-
 			ESP_ERROR_CHECK(this->modules->add(this));
-
-			// ESP_LOGI(this->tag.c_str(), "/Construct");
 		}
 
 		// Task 
@@ -584,43 +573,53 @@ class Modules{
 		};
 
 		// Sink / Source
-		esp_err_t setIsSink(bool isSink = true){
+		esp_err_t setIsSink(){
 
-			this->isSink = isSink;
+			this->isSink = true;
 
-			if (this->isSink) {
-				ESP_ERROR_CHECK(this->queue.create());
+			ESP_ERROR_CHECK(this->queue.create());
 
-				ESP_ERROR_CHECK(this->modules->addSink(this));
-			}
-			else{
-				// ESP_ERROR_CHECK(this->modules->removeSink(this));
-				// ESP_ERROR_CHECK(this->queue.destroy());
-			}
+			this->modules->updateModulesSinkOptions();
 
 			return ESP_OK;
 		}
-		esp_err_t setIsSource(bool isSource = true){
+		esp_err_t setIsSource(){
 
-			this->isSource = isSource;
+			this->isSource = true;
 
-			string label = "Routing";
-			label.append(" ");
-			label.append(this->name);
+			this->addRoutingSetting();
 
-			if (this->isSource){
-				cJSON_AddStringToObject(this->routingSetting, "name", "routing");
-				cJSON_AddStringToObject(this->routingSetting, "label", label.c_str());
-				cJSON_AddStringToObject(this->routingSetting, "inputType", "checkbox");
-				cJSON_AddItemToObject(this->routingSetting, "default", cJSON_CreateArray());
-				cJSON_AddItemReferenceToObject(this->routingSetting, "options", this->modules->sinkOptions);
-				// cJSON_AddItemToObject(this->routingSetting, "options", this->modules->sinkOptions);
-
-				cJSON_AddItemToArray(this->settings.settings, this->routingSetting);
-
-				ESP_ERROR_CHECK(this->settings.loadValue(this->routingSetting));
-			}
 			return ESP_OK;
+		}
+		esp_err_t addRoutingSetting(){
+			
+			cJSON *routingSetting = cJSON_CreateObject();
+			cJSON_AddStringToObject(routingSetting, "name", "routing");
+			cJSON_AddStringToObject(routingSetting, "label", "Routing");
+			cJSON_AddStringToObject(routingSetting, "inputType", "checkbox");
+			cJSON_AddItemToObject(routingSetting, "default", cJSON_CreateArray());
+			cJSON_AddItemToObject(routingSetting, "options", cJSON_CreateArray());
+
+			cJSON_AddItemToArray(this->settings.settings, routingSetting);
+
+			ESP_ERROR_CHECK(this->settings.loadValue(routingSetting));
+
+			this->updateSinkOptions();
+
+			return ESP_OK;
+		}
+		void updateSinkOptions() {
+
+			cJSON * routes = this->settings.getSetting("routes");
+
+			if (!cJSON_IsObject(routes)) {
+				LOGE("Routes not found in module");
+				return;
+			}
+
+			cJSON * options = this->modules->getSinkOptions();
+
+			cJSON_ReplaceItemInObjectCaseSensitive(routes, "options", options);
 		}
 
 		bool canRouteTo(Module * module){
@@ -764,7 +763,6 @@ class Modules{
 	
 	};
 	vector <Module *> modules;
-	vector <Module *> sinks;
 
 	Modules(){
 		// ESP_LOGI(this->tag.c_str(), "Construct");
@@ -805,30 +803,40 @@ class Modules{
 
 		return ESP_OK;
 	}
-	esp_err_t addSink(Module *sinkModule){
 
-		this->sinks.push_back(sinkModule);
-
+	cJSON *getSinkOption(Module *module){
 		cJSON *sinkOption = cJSON_CreateObject();
-		cJSON_AddStringToObject(sinkOption, "name", sinkModule->name.c_str());
-		cJSON_AddStringToObject(sinkOption, "value", sinkModule->name.c_str());
+		cJSON_AddStringToObject(sinkOption, "name", module->name.c_str());
+		cJSON_AddStringToObject(sinkOption, "value", module->name.c_str());
+		return sinkOption;
+	}
+	cJSON *getSinkOptions(){
 
-		// cJSON_AddItemReferenceToArray(this->sinkOptions, sinkOption);
-		cJSON_AddItemToArray(this->sinkOptions, sinkOption);
+		cJSON *sinkOptions = cJSON_CreateArray();
 
-		for (Module *sourceModule: this->modules){
+		for (Module *module: this->modules){
 
-			if (!sourceModule->isSource){
+			if (!module->isSink){
 				continue;
 			}
 
-			cJSON_ReplaceItemInObject(sourceModule->routingSetting, "options", this->sinkOptions);
+			cJSON *sinkOption = this->getSinkOption(module);
+
+			cJSON_AddItemToArray(sinkOptions, sinkOption);
 		}
 
+		return sinkOptions;
+	}
+	void updateModulesSinkOptions(){
 
-		ESP_LOGW(sinkModule->tag.c_str(), "Added to sinks");
+		for (Module *module: this->modules){
 
-		return ESP_OK;
+			if (!module->isSource){
+				continue;
+			}
+
+			module->updateSinkOptions();
+		}
 	}
 	Module * get(string name) {
 
