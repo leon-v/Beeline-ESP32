@@ -19,6 +19,12 @@ class ElasticSearch: public Modules::Module{
 
 	void addTime(cJSON * message){
 
+		// If the message already has a tiemstamp, don't add one
+		cJSON *messageTimestamp = cJSON_GetObjectItemCaseSensitive(message, "timestamp");
+		if(messageTimestamp) {
+			return;
+		}
+
 		struct timeval now;
 
 		gettimeofday(&now, NULL);

@@ -13,8 +13,6 @@ class NtpClient: public Modules::Module{
 	string host;
 	NtpClient(Modules *modules):Modules::Module(modules, string(ntpClientSettingsFile)){
 
-		ESP_ERROR_CHECK(this->setIsSource());
-
 		sntp_setoperatingmode(SNTP_OPMODE_POLL);
 
 		sntp_init();

@@ -6,6 +6,7 @@
 #include "NtpClient.hpp"
 #include "DieTemperature.hpp"
 #include "ElasticSearch.hpp"
+#include "MqttClient.hpp"
 
 static const char *TAG = "main";
 
@@ -58,6 +59,7 @@ extern "C" void app_main(void) {
 		
 	tcpip_adapter_init();
 
+	ESP_ERROR_CHECK(esp_event_loop_create_default());
 	
 	static Modules modules;
 
@@ -69,7 +71,17 @@ extern "C" void app_main(void) {
 
 	static DieTemperature dieTemperature(&modules);
 
+	// char *json = cJSON_Print(dieTemperature.routingSetting);
+	// ESP_LOGW(dieTemperature.tag.c_str(), "routingSetting: %s", json);
+	// free(json);
+
 	static ElasticSearch elasticSearch(&modules);
+
+	static MqttClient mqttClient(&modules);
+
+	// json = cJSON_Print(dieTemperature.routingSetting);
+	// ESP_LOGW(dieTemperature.tag.c_str(), "routingSetting: %s", json);
+	// free(json);
 
 	ESP_ERROR_CHECK(modules.start());
 

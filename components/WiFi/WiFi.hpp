@@ -17,6 +17,7 @@ class WiFi: public Modules::Module{
 	wifi_config_t		clientConfig;
 	wifi_scan_config_t	scanConfig;
 	volatile bool		scanDone = false;
+	bool 				clientLoaded = false;
 	
 	WiFi(Modules *modules):Modules::Module(modules, string(wiFiSettingsFile)){
 
@@ -72,9 +73,17 @@ class WiFi: public Modules::Module{
 		wifi_mode_t wiFiMode;
 		ESP_ERROR_CHECK(esp_wifi_get_mode(&wiFiMode));
 
-		if ( (wiFiMode == WIFI_MODE_STA) || (wiFiMode == WIFI_MODE_APSTA) ) {
-			ESP_ERROR_CHECK(esp_wifi_connect());
+		// Dont connect if no suitable mode selected
+		if ( !( (wiFiMode == WIFI_MODE_STA) || (wiFiMode == WIFI_MODE_APSTA) ) ) {
+			return;
 		}
+
+		if (!this->clientLoaded){
+			LOGI("Skipping connecting while client not ready");
+			return;
+		}
+
+		ESP_ERROR_CHECK(esp_wifi_connect());
 	}
 
 	esp_err_t loadAccessPoint(){
@@ -87,11 +96,6 @@ class WiFi: public Modules::Module{
 		//SSID
 		string settingsSsid = this->settings.getString("accessPointSsid");
 
-		if (!settingsSsid.length()) {
-			ESP_LOGE(this->tag.c_str(), "Failed to get setting 'accessPointSsid'");
-			return ESP_FAIL;
-		}
-
 		settingsSsid.copy( (char *) this->accessPointConfig.ap.ssid, sizeof(this->accessPointConfig.ap.ssid));
 		ESP_LOGI(this->tag.c_str(), "WiFi AP SSID Set to: %s", this->accessPointConfig.ap.ssid);
 
@@ -103,35 +107,39 @@ class WiFi: public Modules::Module{
 	}
 	esp_err_t loadClient() {
 
+		this->clientLoaded = false;
+
 		ESP_ERROR_CHECK(
 			esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N)
 		);
 		
 		//SSID
-		string settingsSsid = this->settings.getString("clientSsid");
+		string clientSsid = this->settings.getString("clientSsid");
 
-		if (!settingsSsid.length()) {
-			ESP_LOGE(this->tag.c_str(), "Failed to get setting 'clientSsid'");
-			return ESP_FAIL;
+		if (clientSsid.empty()){
+			return ESP_OK;
 		}
 
-		settingsSsid.copy( (char *) this->clientConfig.sta.ssid, sizeof(this->clientConfig.sta.ssid));
+		clientSsid.copy( (char *) this->clientConfig.sta.ssid, sizeof(this->clientConfig.sta.ssid));
 		ESP_LOGI(this->tag.c_str(), "WiFi Client SSID Set to: %s", this->accessPointConfig.ap.ssid);
 
 
 		//Password
 		string password = this->settings.getString("clientPassword");
 
-		if (!password.length()) {
-			ESP_LOGE(this->tag.c_str(), "Failed to get setting 'clientPassword'");
-			return ESP_FAIL;
-		}
-
 		password.copy( (char *) this->clientConfig.sta.password, sizeof(this->clientConfig.sta.password));
 		ESP_LOGI(this->tag.c_str(), "WiFi Client password set");
 
-		
-		return esp_wifi_set_config(ESP_IF_WIFI_STA, &this->clientConfig);
+		esp_err_t error = esp_wifi_set_config(ESP_IF_WIFI_STA, &this->clientConfig);
+
+		if (error != ESP_OK){
+			ESP_ERROR_CHECK_WITHOUT_ABORT(error);
+			return error;
+		}
+
+		this->clientLoaded = true;
+
+		return ESP_OK;
 	}
 	esp_err_t loadScan(){
 
@@ -171,6 +179,11 @@ class WiFi: public Modules::Module{
 
 				wifi_mode_t wiFiMode;
 				ESP_ERROR_CHECK(esp_wifi_get_mode(&wiFiMode));
+
+				if (!wifi->clientLoaded){
+					ESP_LOGI(wifi->tag.c_str(), "Skipping reconnect while client not laoded");
+					break;
+				}
 
 				if ( (wiFiMode == WIFI_MODE_STA) || (wiFiMode == WIFI_MODE_APSTA) ) {
 

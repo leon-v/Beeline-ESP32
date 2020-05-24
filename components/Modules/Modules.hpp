@@ -67,7 +67,6 @@ class Modules{
 		int				taskPriority	= 5;
 		bool			isSource		= false;
 		bool			isSink			= false;
-		cJSON			*routingSetting;
 		cJSON			*sinkOption;
 
 		// Module / Init
@@ -117,7 +116,7 @@ class Modules{
 
 				this->tag.insert(0, this->module->tag);
 
-				LOGI("Setting NVS Name: %s", module->name.c_str());
+				// LOGI("Setting NVS Name: %s", this->module->name.c_str());
 
 				this->settings = cJSON_GetObjectItemCaseSensitive(this->module->json, "settings");
 
@@ -134,8 +133,8 @@ class Modules{
 
 				ESP_ERROR_CHECK(this->loadValues());
 
-				ESP_LOGI(this->tag.c_str(), "Construct");
-				ESP_LOGI(this->tag.c_str(), "/Construct");
+				// ESP_LOGI(this->tag.c_str(), "Construct");
+				// ESP_LOGI(this->tag.c_str(), "/Construct");
 			}
 
 			cJSON * cloneJSON(cJSON * json) {
@@ -175,7 +174,8 @@ class Modules{
 				return NULL;
 			}
 			esp_err_t save(cJSON * newSettings) {
-
+				
+				LOGW("save");
 				if (!cJSON_IsArray(newSettings)) {
 					ESP_LOGE(this->tag.c_str(), "Setgins passed is not an array");
 					return ESP_FAIL;
@@ -257,7 +257,9 @@ class Modules{
 
 				string settingName = this->getSettingName(setting);
 
-				cJSON * value = this->nvs.getJSON(settingName.c_str());
+				cJSON *value = this->nvs.getJSON(settingName);
+
+				// LOGW("NVS Setting Name: %s", settingName.c_str());
 				
 				if (!value){
 
@@ -272,7 +274,7 @@ class Modules{
 
 					ESP_ERROR_CHECK(this->setValue(settingName, defaultValue));
 
-					value = this->nvs.getJSON(settingName.c_str());
+					value = this->nvs.getJSON(settingName);
 				}
 
 				cJSON * existingValue = cJSON_GetObjectItemCaseSensitive(setting, "value");
@@ -292,7 +294,7 @@ class Modules{
 				cJSON_ArrayForEach(setting, this->settings) {
 
 					string name = this->getSettingName(setting);
-					ESP_LOGI(this->tag.c_str(), "Loading: %s", name.c_str());
+					// ESP_LOGI(this->tag.c_str(), "Loading: %s", name.c_str());
 
 					ESP_ERROR_CHECK(this->loadValue(setting));
 				}
@@ -331,7 +333,7 @@ class Modules{
 				cJSON *value = this->getValue(name);
 
 				if (!cJSON_IsNumber(value)) {
-					ESP_LOGE(this->tag.c_str(), "Failed to get '%s'", name.c_str());
+					ESP_LOGE(this->tag.c_str(), "Failed to get '%s'. Is not number.", name.c_str());
 					ESP_ERROR_CHECK(ESP_FAIL);
 				}
 
@@ -342,7 +344,7 @@ class Modules{
 				cJSON *value = this->getValue(name);
 
 				if (!cJSON_IsNumber(value)) {
-					ESP_LOGE(this->tag.c_str(), "Failed to get %s", name.c_str());
+					ESP_LOGE(this->tag.c_str(), "Failed to get '%s'. Is not number.", name.c_str());
 					ESP_ERROR_CHECK(ESP_FAIL);
 				}
 
@@ -353,7 +355,7 @@ class Modules{
 					cJSON *value = this->getValue(name);
 
 					if (!cJSON_IsString(value)) {
-						ESP_LOGE(this->tag.c_str(), "Failed to get %s", name.c_str());
+						ESP_LOGE(this->tag.c_str(), "Failed to get '%s'. Is not string.", name.c_str());
 						ESP_ERROR_CHECK(ESP_FAIL);
 					}
 
@@ -427,8 +429,8 @@ class Modules{
 
 				this->tag.insert(0, this->module->tag);
 
-				ESP_LOGI(this->tag.c_str(), "Construct");
-				ESP_LOGI(this->tag.c_str(), "/Construct");
+				// ESP_LOGI(this->tag.c_str(), "Construct");
+				// ESP_LOGI(this->tag.c_str(), "/Construct");
 			}
 
 			esp_err_t create(){
@@ -542,17 +544,7 @@ class Modules{
 			queue(this),
 			message(this) {
 
-			// Handle passed parmaters
-			// this->modules = modules;
-
-			ESP_LOGI(this->tag.c_str(), "Construct");
-
-			this->routingSetting = cJSON_CreateObject();
-			this->sinkOption = cJSON_CreateObject();
-
 			ESP_ERROR_CHECK(this->modules->add(this));
-
-			ESP_LOGI(this->tag.c_str(), "/Construct");
 		}
 
 		// Task 
@@ -563,7 +555,7 @@ class Modules{
 		};
 		static void startTask(Module * module){
 
-			ESP_LOGI(module->tag.c_str(), "startTask");
+			// ESP_LOGI(module->tag.c_str(), "startTask");
 
 			xTaskCreate(
 				&taskWrapper,
@@ -574,54 +566,89 @@ class Modules{
 				NULL
 			);
 
-			ESP_LOGI(module->tag.c_str(), "/startTask");
+			// ESP_LOGI(module->tag.c_str(), "/startTask");
 		};
 		virtual void task(){
 			ESP_LOGW(this->tag.c_str(), "Module has no task");
 		};
 
 		// Sink / Source
-		esp_err_t setIsSink(bool isSink = true){
+		esp_err_t setIsSink(){
 
-			this->isSink = isSink;
+			this->isSink = true;
 
-			if (this->isSink) {
-				ESP_ERROR_CHECK(this->queue.create());
+			ESP_ERROR_CHECK(this->queue.create());
 
-				ESP_ERROR_CHECK(this->modules->addSink(this));
-
-				cJSON_AddStringToObject(this->sinkOption, "name", this->name.c_str());
-				cJSON_AddStringToObject(this->sinkOption, "value", this->name.c_str());
-
-				// cJSON_AddItemReferenceToArray(this->modules->sinkOptions, this->sinkOption);
-				cJSON_AddItemToArray(this->modules->sinkOptions, this->sinkOption);
-
-			}
-			else{
-				// ESP_ERROR_CHECK(this->modules->removeSink(this));
-				// ESP_ERROR_CHECK(this->queue.destroy());
-			}
+			this->modules->updateModulesSinkOptions();
 
 			return ESP_OK;
 		}
-		esp_err_t setIsSource(bool isSource = true){
+		esp_err_t setIsSource(){
 
-			this->isSource = isSource;
+			this->isSource = true;
 
-			if (this->isSource){
-				cJSON_AddStringToObject(this->routingSetting, "name", "routing");
-				cJSON_AddStringToObject(this->routingSetting, "label", "Routing");
-				cJSON_AddStringToObject(this->routingSetting, "inputType", "checkbox");
-				cJSON_AddItemToObject(this->routingSetting, "default", cJSON_CreateArray());
-				cJSON_AddItemToObject(this->routingSetting, "options", this->modules->sinkOptions);
+			this->addRoutingSetting();
 
-				cJSON_AddItemToArray(this->settings.settings, this->routingSetting);
-
-				ESP_ERROR_CHECK(this->settings.loadValue(this->routingSetting));
-			}
 			return ESP_OK;
 		}
+		esp_err_t addRoutingSetting(){
+			
+			cJSON *routingSetting = cJSON_CreateObject();
+			cJSON_AddStringToObject(routingSetting, "name", "routing");
+			cJSON_AddStringToObject(routingSetting, "label", "Routing");
+			cJSON_AddStringToObject(routingSetting, "inputType", "checkbox");
+			cJSON_AddItemToObject(routingSetting, "default", cJSON_CreateArray());
+			cJSON_AddItemToObject(routingSetting, "options", cJSON_CreateArray());
 
+			cJSON_AddItemToArray(this->settings.settings, routingSetting);
+
+			ESP_ERROR_CHECK(this->settings.loadValue(routingSetting));
+
+			this->updateSinkOptions();
+
+			return ESP_OK;
+		}
+		void updateSinkOptions() {
+
+			cJSON * routing = this->settings.getSetting("routing");
+
+			if (!cJSON_IsObject(routing)) {
+				LOGE("Routing not found in module");
+				return;
+			}
+
+			cJSON * options = this->modules->getSinkOptions();
+
+			cJSON_ReplaceItemInObjectCaseSensitive(routing, "options", options);
+		}
+
+		bool canRouteTo(Module * module){
+
+			if (!module->isSink) {
+				return false;
+			}
+			// Is module->name in this routes
+
+			cJSON *routes = this->settings.getValue("routing");
+			
+			if (!cJSON_IsArray(routes)) {
+				return false;
+			}
+
+			cJSON *route;
+			cJSON_ArrayForEach(route, routes) {
+
+				if (!cJSON_IsString(route)) {
+					continue;
+				}
+
+				if (string(route->valuestring).compare(module->name) == 0) {
+					return true;
+				}
+			}
+
+			return false;
+		}
 		// Settings
 		virtual void reLoad(){
 				ESP_LOGW(this->tag.c_str(), "Module has no reLoad");
@@ -736,10 +763,9 @@ class Modules{
 	
 	};
 	vector <Module *> modules;
-	vector <Module *> sinks;
 
 	Modules(){
-		ESP_LOGI(this->tag.c_str(), "Construct");
+		// ESP_LOGI(this->tag.c_str(), "Construct");
 
 		uint8_t mac[6];
 		esp_read_mac(mac, ESP_MAC_WIFI_STA);
@@ -768,7 +794,7 @@ class Modules{
 		static HttpUri restModulesPost("/rest/modules/*", HTTP_POST, &this->restModulesPostUri, this);
 		this->httpServer.registerHttpUri(&restModulesPost);
 
-		ESP_LOGI(this->tag.c_str(), "/Construct");
+		// ESP_LOGI(this->tag.c_str(), "/Construct");
 	}
 
 	esp_err_t add(Module *module){
@@ -777,13 +803,42 @@ class Modules{
 
 		return ESP_OK;
 	}
-	esp_err_t addSink(Module *module){
 
-		this->sinks.push_back(module);
+	cJSON *getSinkOption(Module *module){
+		cJSON *sinkOption = cJSON_CreateObject();
+		cJSON_AddStringToObject(sinkOption, "name", module->name.c_str());
+		cJSON_AddStringToObject(sinkOption, "value", module->name.c_str());
+		return sinkOption;
+	}
+	cJSON *getSinkOptions(){
 
-		ESP_LOGW(module->tag.c_str(), "Added to sinks");
+		cJSON *sinkOptions = cJSON_CreateArray();
 
-		return ESP_OK;
+		for (Module *module: this->modules){
+
+			if (!module->isSink){
+				continue;
+			}
+
+			cJSON *sinkOption = this->getSinkOption(module);
+
+			cJSON_AddItemToArray(sinkOptions, sinkOption);
+		}
+
+		return sinkOptions;
+	}
+	void updateModulesSinkOptions(){
+
+		for (Module *sourceModule: this->modules){
+
+			if (!sourceModule->isSource){
+				continue;
+			}
+
+			// LOGW("Setting sink options to '%s'", sourceModule->name.c_str());
+
+			sourceModule->updateSinkOptions();
+		}
 	}
 	Module * get(string name) {
 
@@ -894,15 +949,15 @@ class Modules{
 
 		module->restPost(httpUri, path);
 	}
-	esp_err_t sendMessage(Module *module, cJSON *message) {
+	esp_err_t sendMessage(Module *fromModule, cJSON *message) {
 
-		for (Module *module: this->modules){
+		for (Module *toModule: this->modules){
 
-			if (!module->isSink) {
+			if (!fromModule->canRouteTo(toModule)) {
 				continue;
 			}
 
-			ESP_ERROR_CHECK_WITHOUT_ABORT(module->queue.add(message));
+			ESP_ERROR_CHECK_WITHOUT_ABORT(toModule->queue.add(message));
 		}
 		
 		return ESP_OK;

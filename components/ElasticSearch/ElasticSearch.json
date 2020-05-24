@@ -5,7 +5,7 @@
 		{
 			"label": "Host",
 			"name":"host",
-			"default": "user:password@elastic.example.com"
+			"default": "https://user:password@elastic.example.com"
 		}
 	]
 }

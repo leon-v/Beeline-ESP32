@@ -49,6 +49,10 @@ class NVS{
 		}
 
 		void setJSON(string name, cJSON * value) {
+
+			char *jsonString = cJSON_Print(value);
+			// ESP_LOGW(this->tag.c_str(), "setJSON: %s = %s", name.c_str(), jsonString);
+			free(jsonString);
 			
 			char * json = cJSON_Print(value);
 
@@ -82,6 +86,8 @@ class NVS{
 			ESP_ERROR_CHECK(
 				nvs_get_str(this->nvsHandle, name.c_str(), json, &length)
 			);
+
+			// ESP_LOGW(this->tag.c_str(), "getJSON: %s = %s", name.c_str(), json);
 
 			cJSON * value = cJSON_Parse(json);
 
