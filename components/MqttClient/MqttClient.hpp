@@ -174,10 +174,10 @@ class MqttClient : public Modules::Module {
 
 
 			case MQTT_EVENT_DATA:
-				LOGI("MQTT_EVENT_DATA");
+				// LOGI("MQTT_EVENT_DATA");
 
-				printf("TOPIC=%.*s\r\n", event->topic_len, event->topic);
-				printf("DATA=%.*s\r\n", event->data_len, event->data);
+				// printf("TOPIC=%.*s\r\n", event->topic_len, event->topic);
+				// printf("DATA=%.*s\r\n", event->data_len, event->data);
 
 				message = cJSON_Parse(event->data);
 
@@ -185,6 +185,11 @@ class MqttClient : public Modules::Module {
 					LOGE("Failed to parse message");
 					break;
 				}
+
+				if (cJSON_IsObject(message)) {
+					cJSON_AddStringToObject(message, "mqttTopic", event->topic);
+				}
+				
 
 				this->message.send(message);
 				
