@@ -610,16 +610,18 @@ class Modules{
 		}
 		void updateSinkOptions() {
 
-			cJSON * routes = this->settings.getSetting("routes");
+			cJSON * routing = this->settings.getSetting("routing");
 
-			if (!cJSON_IsObject(routes)) {
-				LOGE("Routes not found in module");
+			if (!cJSON_IsObject(routing)) {
+				LOGE("Routing not found in module");
 				return;
 			}
 
 			cJSON * options = this->modules->getSinkOptions();
 
-			cJSON_ReplaceItemInObjectCaseSensitive(routes, "options", options);
+			jlogw(options);
+
+			cJSON_ReplaceItemInObjectCaseSensitive(routing, "options", options);
 		}
 
 		bool canRouteTo(Module * module){
@@ -829,13 +831,15 @@ class Modules{
 	}
 	void updateModulesSinkOptions(){
 
-		for (Module *module: this->modules){
+		for (Module *sourceModule: this->modules){
 
-			if (!module->isSource){
+			if (!sourceModule->isSource){
 				continue;
 			}
 
-			module->updateSinkOptions();
+			LOGW("Setting sink options to '%s'", sourceModule->name.c_str());
+
+			sourceModule->updateSinkOptions();
 		}
 	}
 	Module * get(string name) {
