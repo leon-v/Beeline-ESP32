@@ -85,7 +85,6 @@ class ElasticSearch: public Modules::Module{
 			cJSON *message = this->message.recieve();
 
 			if (!message) {
-				ESP_LOGI(this->name.c_str(), "No message recieved");
 				continue;
 			}
 
