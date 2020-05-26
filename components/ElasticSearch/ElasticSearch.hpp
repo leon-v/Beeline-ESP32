@@ -125,6 +125,7 @@ class ElasticSearch: public Modules::Module{
 			this->clientConfig.user_data = this;
 			this->clientConfig.auth_type = HTTP_AUTH_TYPE_BASIC;
 			this->clientConfig.method = HTTP_METHOD_POST;
+			this->clientConfig.timeout_ms = 500;
 
 			esp_http_client_handle_t client = esp_http_client_init(&this->clientConfig);
 
