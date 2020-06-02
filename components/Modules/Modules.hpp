@@ -38,6 +38,16 @@ using namespace std;
 	ESP_LOGE(this->tag.c_str(), format, ##__VA_ARGS__);\
 }
 
+#define SLOGI(module, format, ...){\
+	ESP_LOGI(module->tag.c_str(), format, ##__VA_ARGS__);\
+}
+#define SLOGW(module, format, ...){\
+	ESP_LOGW(module->tag.c_str(), format, ##__VA_ARGS__);\
+}
+#define SLOGE(module, format, ...){\
+	ESP_LOGE(module->tag.c_str(), format, ##__VA_ARGS__);\
+}
+
 #define jlogw(json){\
 	char *jlogwjson = cJSON_Print(json);\
 	ESP_LOGW(this->tag.c_str(), "%s:%d: %s", __func__, __LINE__ , jlogwjson);\

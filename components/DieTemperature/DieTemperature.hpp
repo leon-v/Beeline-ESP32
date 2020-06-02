@@ -28,9 +28,9 @@ class DieTemperature: public Modules::Module{
 	void task(){
 
 		this->mutex = xSemaphoreCreateMutex();
-		vQueueAddToRegistry(this->mutex, "getTemperatureMutex");
+		vQueueAddToRegistry(this->mutex, "getTemperature");
 
-		if (!mutex){
+		if (!this->mutex){
 			LOGE("Failed to create mutex");
 			ESP_ERROR_CHECK(ESP_FAIL);
 		}

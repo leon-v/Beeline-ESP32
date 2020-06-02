@@ -1,0 +1,11 @@
+{
+	"name": "ADCs",
+	"description": "Provides ADC Channels as message sources.",
+	"settings": [
+		{
+			"label": "Channels",
+			"name":"channels",
+			"default": 2
+		}
+	]
+}
