@@ -5,7 +5,10 @@
 		{
 			"label": "Channels",
 			"name":"channels",
-			"default": 2
+			"inputClass":"AdcsInput",
+			"default": 1,
+			"min": 0,
+			"max": 18
 		}
 	]
 }

@@ -275,6 +275,11 @@ class ConfigureSettingInput{
 
 	getInput(inputOptions){
 
+		if (inputOptions.inputClass){
+			var constructor = eval(inputOptions.inputClass);
+			return this.setting.appendOnce(constructor, inputOptions.name);
+		}
+
 		switch (this.getType(inputOptions)){
 
 			case 'text':
@@ -284,8 +289,8 @@ class ConfigureSettingInput{
 				return this.setting.appendOnce(SelectInput, inputOptions.name);
 
 			case 'checkbox':
-				var className = inputOptions.options ? MultiCheckboxInput : SingleCheckboxInput;
-				return this.setting.appendOnce(className, inputOptions.name);
+				var constructor = inputOptions.options ? MultiCheckboxInput : SingleCheckboxInput;
+				return this.setting.appendOnce(constructor, inputOptions.name);
 
 			default:
 				console.error('Type ' + type + ' not handled');

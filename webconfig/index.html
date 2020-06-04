@@ -789,6 +789,38 @@
 		}
 	</script>
 
+	<template id="AdcsInput">
+		<div class="form-group row">
+			<label class="col-sm-2 col-form-label">...</label>
+			<div class="group col-sm-10">
+				<input class="channels" type="number">
+			</div>
+		</div>
+	</template>
+	<script>
+		class AdcsInput extends Template{
+			channels;
+			label;
+			constructor(parent){
+				super('#AdcsInput', parent);
+				this.channels = this.find('.channels');
+				this.label = this.find('label');
+			}
+			set label(value){
+				this.label.text(value);
+			}
+			set value(value){
+				this.channels.val(value);
+			}
+			set min(value){
+				this.channels.attr('min', value);
+			}
+			set max(value){
+				this.channels.attr('max', value);
+			}
+		}
+	</script>
+
 	<script src="page.js"></script>
 	<script src="index.js"></script>
 
