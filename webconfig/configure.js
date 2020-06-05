@@ -247,6 +247,8 @@ class ConfigureSetting{
 			request.push(newValue);
 		}
 
+		console.log("save", request);
+
 		var url = 'http://' + this.configure.ip + '/rest/modules/' + encodeURIComponent(this.name);
 
 		devicePost(url, request, this, function(self, response){

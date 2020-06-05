@@ -7,7 +7,7 @@ class Template{
 	parent = null;
 	page = null;
 	appendedElements = {};
-
+	children = {};
 	constructor(selector, parent) {
 
 		this.parent = parent;
@@ -35,7 +35,7 @@ class Template{
 			$(parent).append(this.element);
 		}
 		else{
-			console.log('No parent for ', this.element);
+			console.error('No parent for ', this);
 		}
 		
 	}
@@ -75,6 +75,10 @@ class Template{
 		this.element.page = this.page;
 	}
 
+	set label(value){
+		this.find("label").text(value);
+	}
+
 	get page(){
 		return this.page;
 	}
@@ -94,5 +98,13 @@ class Template{
 
 	show(){
 		this.element.show();
+	}
+
+	load(values){
+
+		var name;
+		for (name in values){
+			this[name] = values[name];
+		}
 	}
 }

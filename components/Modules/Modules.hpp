@@ -208,7 +208,7 @@ class Modules{
 						continue;
 					}
 
-					ESP_ERROR_CHECK(this->setValue(newSettingName->valuestring, newSettingValue));
+					ESP_ERROR_CHECK_WITHOUT_ABORT(this->setValue(newSettingName->valuestring, newSettingValue));
 				}
 
 				return ESP_OK;

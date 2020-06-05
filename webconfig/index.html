@@ -411,8 +411,8 @@
 
 	<template id="TextInput">
 		<div class="form-group row">
-			<label for="" class="col-sm-2 col-form-label">...</label>
-			<div class="col-sm-10">
+			<label for="" class="col-form-label col-sm-3">...</label>
+			<div class="">
 				<input type="text" class="form-control">
 			</div>
 		</div>
@@ -425,9 +425,6 @@
 				this.input = this.find('input');
 			}
 
-			set label(value){
-				this.find(".col-form-label").text(value);
-			}
 			set value(value){
 				this.input.val(value);
 			}
@@ -436,6 +433,89 @@
 				return this.input.val();
 			}
 		}
+	</script>
+
+	<template id="NumberInput">
+		<div class="form-group row">
+			<label class="col-form-label col-sm-3">...</label>
+			<div class="group col-sm-9">
+				<input type="number">
+			</div>
+		</div>
+	</template>
+	<script>
+		class NumberInput extends Template{
+			constructor(parent){
+				super('#NumberInput', parent);
+			}
+			set label(value){
+				this.find("label").text(value);
+			}
+			set value(value){
+				this.find('input').val(value);
+			}
+			get value(){
+				return this.find('input').val();
+			}
+			set min(value){
+				this.find('input').attr('min', value);
+			}
+			set max(value){
+				this.find('input').attr('max', value);
+			}
+			set step(value){
+				this.find('input').attr('step', value);
+			}
+		}
+	</script>
+
+	<template id="SelectInput">
+	<div class="form-group row">
+		<label class="col-form-label col-sm-3">...</label>
+		<div class="">
+			<select class="form-control" aria-describedby="basic-addon2">
+				<option class="labelOption"></option>
+			</select>
+		</div>
+	</div>
+	</template>
+	<script>
+	class SelectInput extends Template{
+		select = null;
+		constructor(parent){
+			super('#SelectInput', parent);
+			this.select = this.find('select');
+		}
+
+		set label(value){
+			this.find("label").text(value);
+			this.find(".labelOption").text('Seelct ' + value);
+		}
+
+		set options(value){
+			var index;
+			for (index in value) {
+				this.addOption(index, value[index]);
+			}
+		}
+
+		set value(value){
+			this.select.val(value);
+		}
+
+		get value(){
+			return this.select.val();
+		}
+
+		addOption(value, label){
+
+			var option = $('<option></option>');
+			option.attr('value', value);
+			option.text(label);
+
+			this.select.append(option);
+		}
+	}
 	</script>
 
 	<template id="HorizontalRule">
@@ -449,59 +529,10 @@
 		}
 	</script>
 
-	<template id="SelectInput">
-		<div class="form-group row">
-			<label class="col-sm-2 col-form-label">...</label>
-			<div class="col-sm-10">
-				<select class="form-control" aria-describedby="basic-addon2">
-					<option class="labelOption"></option>
-				</select>
-			</div>
-		</div>
-	</template>
-	<script>
-		class SelectInput extends Template{
-			select = null;
-			constructor(parent){
-				super('#SelectInput', parent);
-				this.select = this.find('select');
-			}
-
-			set label(value){
-				this.find(".col-form-label").text(value);
-				this.find(".labelOption").text('Seelct ' + value);
-			}
-
-			set options(value){
-				var index;
-				for (index in value) {
-					this.addOption(index, value[index]);
-				}
-			}
-
-			set value(value){
-				this.select.val(value);
-			}
-
-			get value(){
-				return this.select.val();
-			}
-
-			addOption(value, label){
-
-				var option = $('<option></option>');
-				option.attr('value', value);
-				option.text(label);
-
-				this.select.append(option);
-			}
-		}
-	</script>
-
 	<template id="SingleCheckboxInput">
 		<div class="form-group row">
-			<label class="col-sm-2 col-form-label">...</label>
-			<div class="col-sm-10">
+			<label class="col-form-label col-sm-3">...</label>
+			<div class="">
 				<input type="checkbox">
 			</div>
 		</div>
@@ -513,7 +544,7 @@
 			}
 
 			set name(value){
-				this.find(".col-form-label").text(value);
+				this.find(".col-form-label col-sm-3").text(value);
 			}
 
 			set value(value){
@@ -571,8 +602,8 @@
 
 	<template id="MultiCheckboxInput">
 		<div class="form-group row">
-			<label class="col-sm-2 col-form-label">...</label>
-			<div class="group col-sm-10">
+			<label class="col-form-label col-sm-3">...</label>
+			<div class="group col-sm-9">
 				<!-- CheckboxInput -->
 			</div>
 		</div>
@@ -585,10 +616,6 @@
 			constructor(parent){
 				super('#MultiCheckboxInput', parent);
 				this.group = this.find('.group');
-			}
-
-			set label(value){
-				this.find(".col-form-label").text(value);
 			}
 
 			set options(value){
@@ -648,8 +675,8 @@
 
 	<template id="Preformatted">
 		<div class="form-group row">
-			<label class="col-sm-2 col-form-label">...</label>
-			<div class="group col-sm-10">
+			<label class="col-form-label col-sm-3">...</label>
+			<div class="group col-sm-9">
 				<pre></pre>
 			</div>
 		</div>
@@ -672,8 +699,8 @@
 
 	<template id="GraphLog">
 		<div class="form-group row">
-			<label class="col-sm-2 col-form-label">...</label>
-			<div class="group col-sm-10">
+			<label class="col-form-label col-sm-3">...</label>
+			<div class="group col-sm-9">
 				<canvas style="border:1px solid black">
 				</canvas>
 			</div>
@@ -789,34 +816,101 @@
 		}
 	</script>
 
-	<template id="AdcsInput">
-		<div class="form-group row">
-			<label class="col-sm-2 col-form-label">...</label>
-			<div class="group col-sm-10">
-				<input class="channels" type="number">
-			</div>
+	<template id="AdcChannels">
+		<label class="col-form-label col-sm-3">...</label>
+		<div class="group col-sm-9">
 		</div>
 	</template>
 	<script>
-		class AdcsInput extends Template{
+		class AdcChannels extends Template{
 			channels;
-			label;
+			channelConfig = {};
 			constructor(parent){
-				super('#AdcsInput', parent);
-				this.channels = this.find('.channels');
-				this.label = this.find('label');
+				super("#AdcChannels", parent);
+				this.channels = this.find(".group");
+			}
+			append(className, ...args){
+				return new className(this.channels, ...args);
+			}
+			get chanCount(){
+				return this.parent.template.appendedElements.chanCount.value;
 			}
 			set label(value){
-				this.label.text(value);
+				this.find("label").text(value);
 			}
 			set value(value){
-				this.channels.val(value);
+
+				// Hide all channels
+
+				// Init active chanels
+				var channelIndex;
+				for (channelIndex = 1; channelIndex <= this.chanCount; channelIndex++){
+					var channelValue = value[channelIndex];
+					this.channels[channelIndex] = this.initChannel(channelIndex, this.channelConfig, channelValue);
+				}
 			}
-			set min(value){
-				this.channels.attr('min', value);
+			get value(){
+
+				var value = {};
+				var channelIndex;
+				for (channelIndex = 1; channelIndex <= this.chanCount; channelIndex++){
+					value[channelIndex] = this.channels[channelIndex].value;
+				}
+
+				return value;
 			}
-			set max(value){
-				this.channels.attr('max', value);
+			initChannel(channelIndex, channelConfig, channelValue){
+				return this.appendOnce(AdcChannel, channelIndex, channelIndex, channelConfig, channelValue)
+			}
+		}
+	</script>
+
+	<template id="AdcChannel">
+		<hr>
+		<label class="col-form-label col-sm-3">...</label>
+		<div class="group col-sm-9">
+		</div>
+	</template>
+	<script>
+		class AdcChannel extends Template{
+			group;
+			inputs = {};
+			constructor(parent, index ,config, value){
+				super("#AdcChannel", parent);
+				
+				this.group = this.find(".group");
+
+				this.find("label").text("ADC " + index);
+
+				var inputName;
+				for (inputName in config){
+
+					var inputConfig = config[inputName];
+
+					var inputClass = eval(inputConfig.inputClass);
+
+					var input = this.appendOnce(inputClass, inputName);
+
+					inputConfig.value = inputConfig.value || inputConfig.default;
+
+					input.load(inputConfig);
+
+					this.inputs[inputName] = input;
+				}
+			}
+			append(className, ...args){
+				return new className(this.group, ...args);
+			}
+			get value(){
+
+				var value = {};
+
+				var inputName;
+				for (inputName in this.inputs){
+					value[inputName] = this.inputs[inputName].value;
+				}
+
+				return value;
 			}
 		}
 	</script>

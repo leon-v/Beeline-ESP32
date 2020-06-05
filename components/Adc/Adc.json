@@ -3,12 +3,73 @@
 	"description": "Provides ADC Channels as message sources.",
 	"settings": [
 		{
-			"label": "Channels",
-			"name":"channels",
-			"inputClass":"AdcsInput",
+			"label": "Channel Count",
+			"name":"chanCount",
+			"inputClass":"NumberInput",
 			"default": 1,
 			"min": 0,
 			"max": 18
+		},
+		{
+			"label":"Channels",
+			"name":"channels",
+			"inputClass":"AdcChannels",
+			"channelConfig":{
+				"unit": {
+					"label": "Unit",
+					"inputClass": "NumberInput",
+					"default": 1,
+					"min": 1,
+					"max": 2
+				},
+				"channel":{
+					"label":"Channel",
+					"inputClass": "NumberInput",
+					"default": 1,
+					"min":1,
+					"max":10
+				},
+				"multiplier": {
+					"label":"Multiplier",
+					"inputClass": "NumberInput",
+					"default": 1.00,
+					"step": 0.001
+				},
+				"offset": {
+					"label":"Offset",
+					"inputClass": "NumberInput",
+					"default": 0.00,
+					"step": 0.001
+				},
+				"samples":{
+					"label":"Samples",
+					"inputClass": "NumberInput",
+					"default": 100
+				},
+				"attenuation":{
+					"label":"Attenuation",
+					"inputClass": "SelectInput",
+					"default": 0,
+					"options":{
+						"0":"0db",
+						"1":"2.5db",
+						"2":"6db",
+						"3":"11db"
+					}
+				},
+				"width":{
+					"label":"Bit Width",
+					"inputClass": "SelectInput",
+					"default": 3,
+					"options": {
+						"0": "9 Bits",
+						"1": "10 Bits",
+						"2": "11 Bits",
+						"3": "12 Bits"
+					}
+				}
+			},
+			"default":{}
 		}
 	]
 }
