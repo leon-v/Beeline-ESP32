@@ -199,6 +199,7 @@ class ElasticSearch: public Modules::Module{
 
 		switch(evt->event_id) {
 			case HTTP_EVENT_ERROR:
+				ESP_LOGE(self->tag.c_str(), "HTTP_EVENT_ERROR");
 				break;
 
 			case HTTP_EVENT_ON_CONNECTED:
@@ -208,9 +209,11 @@ class ElasticSearch: public Modules::Module{
 				break;
 
 			case HTTP_EVENT_ON_HEADER:
+				ESP_LOGE(self->tag.c_str(), "HTTP_EVENT_ON_HEADER");
 				break;
 
 			case HTTP_EVENT_ON_DATA:
+				ESP_LOGE(self->tag.c_str(), "HTTP_EVENT_ON_DATA");
 				httpResponseCode = esp_http_client_get_status_code(evt->client);
 
 				if ( (httpResponseCode < 200) || (httpResponseCode > 299) ) {
@@ -220,9 +223,11 @@ class ElasticSearch: public Modules::Module{
 				break;
 
 			case HTTP_EVENT_ON_FINISH:
+				ESP_LOGE(self->tag.c_str(), "HTTP_EVENT_ON_FINISH");
 				break;
 
 			case HTTP_EVENT_DISCONNECTED:
+				ESP_LOGE(self->tag.c_str(), "HTTP_EVENT_DISCONNECTED");
 				break;
 
 		}

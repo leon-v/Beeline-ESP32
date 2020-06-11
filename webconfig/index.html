@@ -412,7 +412,7 @@
 	<template id="TextInput">
 		<div class="form-group row">
 			<label for="" class="col-form-label col-sm-3">...</label>
-			<div class="">
+			<div class="group col-sm-9">
 				<input type="text" class="form-control">
 			</div>
 		</div>
@@ -472,7 +472,7 @@
 	<template id="SelectInput">
 	<div class="form-group row">
 		<label class="col-form-label col-sm-3">...</label>
-		<div class="">
+		<div class="col-sm-9">
 			<select class="form-control" aria-describedby="basic-addon2">
 				<option class="labelOption"></option>
 			</select>
@@ -648,11 +648,17 @@
 			}
 
 			appendOption(settings) {
-				var option = new CheckboxInput(this.group);
+
+				var option = this.optionInputs[settings.value] || null;
+
+				if (!option) {
+					option = new CheckboxInput(this.group);
+					this.optionInputs[settings.value] = option;
+				}
+				
 				option.name = settings.name;
 				option.label = settings.name;
 				option.value = settings.value;
-				this.optionInputs[settings.value] = option;
 			}
 
 			updateChecked(){
@@ -823,30 +829,40 @@
 	</template>
 	<script>
 		class AdcChannels extends Template{
-			channels;
-			channelConfig = {};
+			channelsGroup;
+			channelInstances = {};
+			labelElement;
 			constructor(parent){
 				super("#AdcChannels", parent);
-				this.channels = this.find(".group");
+				this.channelsGroup = this.find(".group");
+				this.labelElement = this.find("label");
 			}
 			append(className, ...args){
-				return new className(this.channels, ...args);
+				return new className(this.channelsGroup, ...args);
 			}
 			get chanCount(){
 				return this.parent.template.appendedElements.chanCount.value;
 			}
 			set label(value){
-				this.find("label").text(value);
+				this.labelElement.text(value);
 			}
 			set value(value){
 
 				// Hide all channels
+				var channelIndex;
+				for (channelIndex in this.channelInstances){
+					var channelInstance = this.channelInstances[channelIndex];
+					console.log("channelInstance", channelInstance);
+					channelInstance.hide();
+				}
 
 				// Init active chanels
-				var channelIndex;
+				
 				for (channelIndex = 1; channelIndex <= this.chanCount; channelIndex++){
 					var channelValue = value[channelIndex];
-					this.channels[channelIndex] = this.initChannel(channelIndex, this.channelConfig, channelValue);
+					var channelInstance = this.initChannel(channelIndex, this.channelConfig, channelValue);
+					this.channelInstances[channelIndex] = channelInstance;
+					channelInstance.show();
 				}
 			}
 			get value(){
@@ -854,7 +870,13 @@
 				var value = {};
 				var channelIndex;
 				for (channelIndex = 1; channelIndex <= this.chanCount; channelIndex++){
-					value[channelIndex] = this.channels[channelIndex].value;
+					var channelInstance = this.channelInstances[channelIndex] || null;
+
+					if (!channelInstance){
+						continue;
+					}
+
+					value[channelIndex] = channelInstance.value;
 				}
 
 				return value;
@@ -868,8 +890,7 @@
 	<template id="AdcChannel">
 		<hr>
 		<label class="col-form-label col-sm-3">...</label>
-		<div class="group col-sm-9">
-		</div>
+		<div class="group col-sm-9"></div>
 	</template>
 	<script>
 		class AdcChannel extends Template{
@@ -891,12 +912,16 @@
 
 					var input = this.appendOnce(inputClass, inputName);
 
+					console.log(inputConfig);
 					inputConfig.value = inputConfig.value || inputConfig.default;
 
 					input.load(inputConfig);
 
 					this.inputs[inputName] = input;
 				}
+			}
+			hide(){
+				this.element.hide();
 			}
 			append(className, ...args){
 				return new className(this.group, ...args);

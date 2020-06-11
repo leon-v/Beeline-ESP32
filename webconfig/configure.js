@@ -209,7 +209,8 @@ class ConfigureSetting{
 			var setting = settings[index];
 
 			if (this.settings[setting.name]){
-				this.settings[setting.name].constructor(this, setting);
+				this.settings[setting.name].load(setting);
+				// this.settings[setting.name].reConstructor(this, setting);
 			}
 			else{
 				this.settings[setting.name] = new ConfigureSettingInput(this, setting);
@@ -217,10 +218,12 @@ class ConfigureSetting{
 			
 		}
 
-		this.form.saveButton = this.form.appendOnce(Button, 'save', 'Save', 'primary');
-		this.form.saveButton.setting = this;
-		this.form.saveButton.click = function(event){
-			this.setting.save(event);
+		if (!this.form.saveButton){
+			this.form.saveButton = this.form.appendOnce(Button, 'save', 'Save', 'primary');
+			this.form.saveButton.setting = this;
+			this.form.saveButton.click = function(event){
+				this.setting.save(event);
+			}
 		}
 	}
 
@@ -311,5 +314,9 @@ class ConfigureSettingInput{
 	get value(){
 		var typedValue = this.inputOptions.value || this.inputOptions.default
 		return convertToTypeOf(typedValue, this.input.value);
+	}
+
+	load(values){
+		this.input.load(values);
 	}
 }

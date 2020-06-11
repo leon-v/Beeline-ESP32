@@ -15,6 +15,11 @@
 			"name":"channels",
 			"inputClass":"AdcChannels",
 			"channelConfig":{
+				"name":{
+					"label": "Name",
+					"inputClass": "TextInput",
+					"default": "ADC Name"
+				},
 				"unit": {
 					"label": "Unit",
 					"inputClass": "NumberInput",
