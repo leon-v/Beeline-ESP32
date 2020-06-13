@@ -153,6 +153,8 @@ class ElasticSearch: public Modules::Module{
 
 			// LOGI("ES: %s", postData);
 
+			LOGI("Message Processing End");
+
 			free(postData);
 
 			cJSON_Delete(message);
